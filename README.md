@@ -1,4 +1,4 @@
-# 🧠 AI-ForensicBench
+# AI-ForensicBench
 
 > **AI Forensic Reasoning Benchmark with Ground-Truth-Guaranteed Data**
 
