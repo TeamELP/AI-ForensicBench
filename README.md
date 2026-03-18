@@ -95,9 +95,9 @@ AI-ForensicBench/
 
 | Name | Role                        | Output                            |
 | ---- | --------------------------- | --------------------------------- |
-| 정민   | AI / Evaluation / Pipeline  | ai_result.json, evaluation.json   |
-| 수아   | Scenario / Ground Truth     | scenario.json, ground_truth.json  |
-| 지원   | Artifact / Dataset / Prompt | raw_artifacts.json, ai_input.json |
+| 오정민   | AI / Evaluation / Pipeline  | ai_result.json, evaluation.json   |
+| 전수아   | Scenario / Ground Truth     | scenario.json, ground_truth.json  |
+| 윤지원   | Artifact / Dataset / Prompt | raw_artifacts.json, ai_input.json |
 
 ---
 
