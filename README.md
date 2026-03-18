@@ -1,61 +1,73 @@
-# AI-ForensicBench
+# 🧠 AI-ForensicBench
 
-> 포렌식 사건 시나리오를 자동 실행하고, Ground Truth와 시스템 아티팩트를 병렬 기록하여 AI 모델의 포렌식 추론 능력을 평가하는 벤치마크 프레임워크
-
----
-
-## 프로젝트 개요
-
-기존 디지털 포렌식 AI 연구는 **정확한 Ground Truth 데이터 부족** 문제로 인해 AI 모델의 성능을 객관적으로 평가하기 어려웠습니다.
-
-AI-ForensicBench는 가상 환경에서 포렌식 사건 시나리오를 직접 실행하고, 실행과 동시에 Ground Truth를 자동 기록함으로써 **라벨 노이즈 없는 포렌식 AI 벤치마크 데이터셋**을 생성합니다.
-
-### 핵심 차별점
-
-- **Ground Truth 자동 기록** — 시나리오 실행과 동시에 정답 데이터 생성, 라벨 노이즈 없음
-- **AI Forensic Reasoning Benchmark** — 사건 유형 분류 + 타임라인 재구성 태스크 평가
-- **듀얼 기록 구조** — 실제 행동(Ground Truth)과 시스템 흔적(Artifact)을 분리 저장
+> **AI Forensic Reasoning Benchmark with Ground-Truth-Guaranteed Data**
 
 ---
 
-## 시스템 아키텍처
+## 🚀 Overview
 
-```
-[Scenario Executor]
-    ├──────────────────────────────┐
-    ▼                              ▼
-[Ground Truth Recorder]    [Artifact Collector]
-    ↓                              ↓
-ground_truth.json          raw_artifacts.json
-    └──────────────┬───────────────┘
-                   ▼
-          [Dataset Builder]
-                   ↓
-             case_xxx/
-                   ↓
-          [Prompt Builder]
-                   ↓
-            ai_input.json
-                   ↓
-           [AI Analyzer]
-                   ↓
-            ai_result.json
-                   ↓
-       [Benchmark Evaluator]
-                   ↓
-           evaluation.json
-                   ↓
-        [Result Dashboard]
+AI-ForensicBench는 **포렌식 사건 시나리오를 자동 실행**하고,
+실행과 동시에 **Ground Truth와 시스템 아티팩트를 병렬 기록**하여
+AI 모델의 포렌식 추론 능력을 평가하는 벤치마크 프레임워크입니다.
+
+---
+
+## ⚡ Why AI-ForensicBench?
+
+기존 디지털 포렌식 AI 연구의 가장 큰 문제는:
+
+> ❗ **정확한 Ground Truth 데이터 부족**
+
+이로 인해 AI 모델의 성능을 **객관적으로 평가하기 어려움**
+
+---
+
+## 💡 Key Features
+
+### 🧾 Ground Truth 자동 생성
+
+* 시나리오 실행과 동시에 정답 데이터 생성
+* **라벨 노이즈 없는 데이터셋**
+
+### 🧠 AI Forensic Reasoning Benchmark
+
+* 사건 유형 분류 (Classification)
+* 타임라인 재구성 (Timeline Reconstruction)
+
+### 🔀 Dual Recording Architecture
+
+* 실제 행동 (Ground Truth)
+* 시스템 흔적 (Artifacts)
+  👉 **두 데이터를 분리 저장**
+
+---
+
+## 🏗 System Architecture
+
+```text
+Scenario Execution
+   ↓
+Ground Truth Recording   +   Artifact Collection
+   ↓                          ↓
+      → Dataset Builder ←
+               ↓
+        Prompt Builder
+               ↓
+           AI Analyzer
+               ↓
+      Benchmark Evaluator
+               ↓
+        Result Dashboard
 ```
 
 ---
 
-## 파일 구조
+## 📁 Project Structure
 
-```
+```bash
 AI-ForensicBench/
- ├── label_schema.json         # 공통 라벨 체계
- ├── run_pipeline.py           # 전체 파이프라인 실행
+ ├── label_schema.json
+ ├── run_pipeline.py
  │
  ├── src/
  │    ├── scenario_executor.py
@@ -68,39 +80,49 @@ AI-ForensicBench/
  │
  └── dataset/
       └── case_001/
-           ├── scenario.json        # 무엇을 실행했는가
-           ├── metadata.json        # 어떤 환경/설정으로 실행했는가
-           ├── ground_truth.json    # 실제로 어떤 행동이 일어났는가
-           ├── raw_artifacts.json   # 시스템에 어떤 흔적이 남았는가
-           ├── ai_input.json        # AI에게 무엇을 입력했는가
-           ├── ai_result.json       # AI가 무엇이라고 판단했는가
-           └── evaluation.json      # AI가 얼마나 맞았는가
+           ├── scenario.json
+           ├── metadata.json
+           ├── ground_truth.json
+           ├── raw_artifacts.json
+           ├── ai_input.json
+           ├── ai_result.json
+           └── evaluation.json
 ```
 
 ---
 
-## MVP 범위
+## 🎯 MVP Scope
 
-| 항목 | 내용 |
-|------|------|
-| 시나리오 | `malware_execution`, `data_exfiltration` |
-| Artifact | file events, process events, event logs |
-| AI Task | 사건 유형 분류, 타임라인 재구성 |
-| 평가 지표 | Classification Accuracy, Timeline LCS Score |
-| AI 입력 방식 | 템플릿 기반 자연어 요약 |
-
----
-
-## 팀원 및 역할
-
-| 이름 | 담당 모듈 | 산출물 |
-|------|-----------|--------|
-| 정민 | AI Analyzer, Benchmark Evaluator, 파이프라인 총괄 | `ai_result.json`, `evaluation.json`, `run_pipeline.py`, `label_schema.json` |
-| 수아 | Scenario Executor, Ground Truth Recorder | `scenario.json`, `ground_truth.json` |
-| 지원 | Artifact Collector, Dataset Builder, Prompt Builder | `raw_artifacts.json`, `ai_input.json`, `metadata.json` |
+| Category | Details                                 |
+| -------- | --------------------------------------- |
+| Scenario | malware_execution, data_exfiltration    |
+| Artifact | file, process, event logs               |
+| AI Task  | Classification, Timeline Reconstruction |
+| Metric   | Accuracy, Timeline LCS Score            |
+| Input    | Template-based natural language         |
 
 ---
 
-## 키워드
+## 👥 Team
 
-`Digital Forensics` `AI` `Security` `Ground Truth` `Benchmark`
+| Name | Role                        | Output                            |
+| ---- | --------------------------- | --------------------------------- |
+| 정민   | AI / Evaluation / Pipeline  | ai_result.json, evaluation.json   |
+| 수아   | Scenario / Ground Truth     | scenario.json, ground_truth.json  |
+| 지원   | Artifact / Dataset / Prompt | raw_artifacts.json, ai_input.json |
+
+---
+
+## 🔑 Keywords
+
+`Digital Forensics` · `AI` · `Security` · `Ground Truth` · `Benchmark`
+
+---
+
+## 📌 Vision
+
+> **“AI가 포렌식을 얼마나 ‘정확하게 이해하는가’를 측정한다”**
+
+AI-ForensicBench는
+단순 자동화 도구가 아니라,
+**AI 포렌식 추론 능력을 검증하는 표준 벤치마크**를 목표로 합니다.
