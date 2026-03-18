@@ -91,18 +91,6 @@ AI-ForensicBench/
 
 ---
 
-## 🎯 MVP Scope
-
-| Category | Details                                 |
-| -------- | --------------------------------------- |
-| Scenario | malware_execution, data_exfiltration    |
-| Artifact | file, process, event logs               |
-| AI Task  | Classification, Timeline Reconstruction |
-| Metric   | Accuracy, Timeline LCS Score            |
-| Input    | Template-based natural language         |
-
----
-
 ## 👥 Team
 
 | Name | Role                        | Output                            |
