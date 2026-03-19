@@ -1,5 +1,5 @@
 {
-  "scenario_id": "case_phishing_001_v2",
+  "scenario_id": "case_phishing_001",
   "scenario_name": "phishing_based_data_exfiltration_enhanced",
   "description": "피싱 문서를 통한 매크로 실행 → 인코딩 PowerShell → 페이로드 다운로드/실행 → 데이터 수집 및 유출 → 흔적 제거",
 
