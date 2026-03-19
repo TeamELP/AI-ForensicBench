@@ -1,0 +1,71 @@
+{
+  "scenario_id": "case_attack_001",
+  "scenario_name": "scripted_collection_and_cleanup",
+  "description": "PowerShell을 이용해 공격을 시작하고, 추가 프로세스를 실행한 뒤 민감 파일을 생성 및 압축하고 최종적으로 원본 파일을 삭제하는 공격 준비 및 흔적 제거 시나리오",
+
+  "attack_mapping": [
+    {
+      "tactic": "Execution",
+      "technique_id": "T1059",
+      "technique_name": "Command and Scripting Interpreter"
+    },
+    {
+      "tactic": "Collection",
+      "technique_id": "T1005",
+      "technique_name": "Data from Local System"
+    },
+    {
+      "tactic": "Exfiltration",
+      "technique_id": "T1560",
+      "technique_name": "Archive Collected Data"
+    },
+    {
+      "tactic": "Defense Evasion",
+      "technique_id": "T1070",
+      "technique_name": "Indicator Removal"
+    }
+  ],
+
+  "actions": [
+    {
+      "action_id": 1,
+      "action_type": "powershell_execute",
+      "technique_id": "T1059",
+      "command": "powershell -Command \"Start-Process C:\\temp\\collector.exe\"",
+      "target": "powershell.exe",
+      "description": "PowerShell을 사용하여 후속 공격 단계를 수행할 프로세스를 실행"
+    },
+    {
+      "action_id": 2,
+      "action_type": "process_execute",
+      "technique_id": "T1059",
+      "command": "C:\\temp\\collector.exe",
+      "target": "collector.exe",
+      "description": "추가 실행 파일을 구동하여 실제 파일 생성 및 수집 행위를 시작"
+    },
+    {
+      "action_id": 3,
+      "action_type": "file_create",
+      "technique_id": "T1005",
+      "command": "echo secret_data > C:\\temp\\secret.txt",
+      "target": "C:\\temp\\secret.txt",
+      "description": "수집 또는 탈취 대상으로 볼 수 있는 민감 파일을 로컬 시스템에 생성"
+    },
+    {
+      "action_id": 4,
+      "action_type": "file_compress",
+      "technique_id": "T1560",
+      "command": "Compress-Archive -Path C:\\temp\\secret.txt -DestinationPath C:\\temp\\secret.zip",
+      "target": "C:\\temp\\secret.zip",
+      "description": "생성된 파일을 압축하여 이후 이동 또는 유출이 가능한 형태로 준비"
+    },
+    {
+      "action_id": 5,
+      "action_type": "file_delete",
+      "technique_id": "T1070",
+      "command": "del C:\\temp\\secret.txt",
+      "target": "C:\\temp\\secret.txt",
+      "description": "원본 파일을 삭제하여 공격 흔적을 줄이고 포렌식 분석을 어렵게 함"
+    }
+  ]
+}
