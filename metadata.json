@@ -1,0 +1,76 @@
+{
+  "case": {
+    "case_id": "case_001",
+    "dataset_version": "v1.0",
+    "created_at": "2026-03-18T15:00:00",
+    "author": "team_elp"
+  },
+
+  "scenario": {
+    "type": "data_exfiltration",
+    "description": "Data compressed and exfiltrated via PowerShell",
+    "difficulty": "medium",
+    "tags": ["exfiltration", "powershell", "zip"]
+  },
+
+  "environment": {
+    "os": {
+      "name": "Windows",
+      "edition": "Windows 10 Pro",
+      "version": "22H2",
+      "build": "19045"
+    },
+    "vm": {
+      "platform": "VMware Workstation",
+      "version": "17",
+      "snapshot": "clean_state_before_execution"
+    },
+    "hardware": {
+      "cpu": "AMD Ryzen 5 5600",
+      "memory_gb": 32
+    },
+    "network": {
+      "type": "NAT",
+      "internet_access": true
+    }
+  },
+
+  "execution": {
+    "executor": "user_simulation",
+    "execution_start": "2026-03-18T14:00:00",
+    "execution_end": "2026-03-18T14:05:00",
+    "duration_seconds": 300
+  },
+
+  "collection": {
+    "tools": [
+      {
+        "name": "Sysmon",
+        "version": "14.0",
+        "config_file": "sysmon_config.xml"
+      },
+      {
+        "name": "Windows Event Log",
+        "channels": ["Security", "System", "Application"]
+      }
+    ],
+    "collection_start": "2026-03-18T14:00:00",
+    "collection_end": "2026-03-18T14:10:00",
+    "artifact_types": [
+      "process",
+      "file",
+      "network"
+    ]
+  },
+
+  "artifacts": {
+    "raw_artifacts_file": "raw_artifacts.json",
+    "event_count": 128
+  },
+
+  "integrity": {
+    "hash_algorithm": "SHA256",
+    "dataset_hash": "abc123...",
+    "artifacts_hash": "def456..."
+  }
+}
