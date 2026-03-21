@@ -1,0 +1,103 @@
+{
+  "schema_version": "v1.0",
+  "description": "Label schema for the PoC-stage AI-ForensicBench pipeline. This schema defines the common labels used across scenario definition, ground truth recording, artifact normalization, AI output generation, and benchmark evaluation.",
+
+  "incident_types": [
+    {
+      "name": "scripted_collection_and_cleanup",
+      "description": "A scripted attack flow involving PowerShell execution, process execution, local file creation, file compression, and file deletion."
+    },
+    {
+      "name": "benign_activity",
+      "description": "Normal user activity with no malicious intent."
+    }
+  ],
+
+  "action_types": [
+    {
+      "name": "powershell_execute",
+      "category": "process",
+      "description": "Execution of a PowerShell command or script.",
+      "sysmon_mapping": {
+        "event_id": 1,
+        "event_name": "Process Create"
+      }
+    },
+    {
+      "name": "process_execute",
+      "category": "process",
+      "description": "Execution of a non-PowerShell process or executable payload.",
+      "sysmon_mapping": {
+        "event_id": 1,
+        "event_name": "Process Create"
+      }
+    },
+    {
+      "name": "file_create",
+      "category": "file",
+      "description": "Creation of a file on the local system. In this PoC, this label may also include externally introduced files when network-level collection is not performed.",
+      "sysmon_mapping": {
+        "event_id": 11,
+        "event_name": "File Create"
+      }
+    },
+    {
+      "name": "file_compress",
+      "category": "file",
+      "description": "Compression or archiving of collected files into an archive such as ZIP.",
+      "sysmon_mapping": {
+        "event_id": null,
+        "event_name": "Derived or command-inferred event"
+      }
+    },
+    {
+      "name": "file_delete",
+      "category": "file",
+      "description": "Deletion of a file from the local system.",
+      "sysmon_mapping": {
+        "event_id": 23,
+        "event_name": "File Delete"
+      }
+    }
+  ],
+
+  "artifact_types": [
+    {
+      "name": "process",
+      "description": "Process execution artifacts collected from Sysmon or Windows Event Log."
+    },
+    {
+      "name": "file",
+      "description": "File system artifacts including creation, archive output, and deletion."
+    }
+  ],
+
+  "ai_output_schema": {
+    "predicted_incident_type": {
+      "allowed_values": [
+        "scripted_collection_and_cleanup",
+        "benign_activity"
+      ]
+    },
+    "predicted_timeline": {
+      "allowed_values": [
+        "powershell_execute",
+        "process_execute",
+        "file_create",
+        "file_compress",
+        "file_delete"
+      ]
+    }
+  },
+
+  "evaluation_schema": {
+    "classification_metric": "Accuracy",
+    "timeline_metric": "LCS"
+  },
+
+  "assumptions": {
+    "network_collection": false,
+    "file_create_includes_external_or_local": true,
+    "file_compress_may_be_inferred_from_command_or_archive_artifact": true
+  }
+}
