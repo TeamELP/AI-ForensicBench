@@ -6,7 +6,7 @@
     "author": "team_elp"
   },
 
-  "scenario": "scenario_001",
+  "scenario": "case_attack_001",
 
   "environment": {
     "os": {
@@ -54,7 +54,6 @@
     "artifact_types": [
       "process",
       "file",
-      "network"
     ]
   },
 
