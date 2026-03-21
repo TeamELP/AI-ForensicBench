@@ -6,12 +6,7 @@
     "author": "team_elp"
   },
 
-  "scenario": {
-    "type": "data_exfiltration",
-    "description": "Data compressed and exfiltrated via PowerShell",
-    "difficulty": "medium",
-    "tags": ["exfiltration", "powershell", "zip"]
-  },
+  "scenario": "scenario_001",
 
   "environment": {
     "os": {
@@ -65,7 +60,7 @@
 
   "artifacts": {
     "raw_artifacts_file": "raw_artifacts.json",
-    "event_count": 128
+    "event_count": null
   },
 
   "integrity": {
