@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DFIR-Bench — AI 기반 디지털 포렌식 벤치마크 프레임워크</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09090f;
+  --bg2:#0e0e18;
+  --bg3:#13131f;
+  --bg4:#1a1a2a;
+  --border:#ffffff12;
+  --border2:#ffffff20;
+  --text:#e8e8f0;
+  --text2:#a0a0b8;
+  --text3:#606078;
+  --teal:#00d9a3;
+  --teal-dim:#00d9a320;
+  --teal-mid:#00a87e;
+  --coral:#ff6b4a;
+  --coral-dim:#ff6b4a18;
+  --purple:#8b7cf8;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Pretendard',sans-serif;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.7;overflow-x:hidden}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(9,9,15,0.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 2rem}
+.nav-inner{max-width:1100px;margin:0 auto;height:60px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-family:var(--mono);font-weight:600;font-size:15px;color:var(--teal);text-decoration:none;letter-spacing:0.08em}
+.nav-logo span{color:var(--text3)}
+.nav-links{display:flex;gap:2rem;list-style:none}
+.nav-links a{font-family:var(--mono);font-size:12px;color:var(--text3);text-decoration:none;letter-spacing:0.06em;transition:color 0.2s}
+.nav-links a:hover{color:var(--teal)}
+
+/* HERO */
+#hero{min-height:100vh;display:flex;align-items:center;padding:100px 2rem 60px;position:relative;overflow:hidden}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:60px 60px;opacity:0.4;mask-image:radial-gradient(ellipse 80% 60% at 50% 50%,black 30%,transparent 100%)}
+.hero-inner{max-width:1100px;margin:0 auto;position:relative;z-index:1}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:var(--teal-dim);border:1px solid var(--teal-mid)40;border-radius:20px;padding:4px 14px;font-family:var(--mono);font-size:11px;color:var(--teal);letter-spacing:0.08em;margin-bottom:2rem}
+.hero-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+h1.hero-title{font-family:var(--mono);font-size:clamp(2.2rem,5vw,3.8rem);font-weight:600;line-height:1.15;letter-spacing:-0.02em;margin-bottom:1.5rem}
+h1.hero-title .accent{color:var(--teal)}
+.hero-sub{font-size:1.05rem;color:var(--text2);max-width:620px;margin-bottom:2.5rem;line-height:1.8}
+.hero-cta{display:flex;gap:12px;flex-wrap:wrap}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--teal);color:#09090f;font-family:var(--mono);font-size:13px;font-weight:600;padding:12px 24px;border-radius:8px;text-decoration:none;transition:opacity 0.2s;letter-spacing:0.04em}
+.btn-primary:hover{opacity:0.85}
+.btn-outline{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--text2);font-family:var(--mono);font-size:13px;padding:12px 24px;border:1px solid var(--border2);border-radius:8px;text-decoration:none;transition:all 0.2s;letter-spacing:0.04em}
+.btn-outline:hover{border-color:var(--teal);color:var(--teal)}
+.hero-stats{display:flex;gap:3rem;margin-top:4rem;padding-top:2.5rem;border-top:1px solid var(--border)}
+.hero-stat-num{font-family:var(--mono);font-size:2rem;font-weight:600;color:var(--teal)}
+.hero-stat-label{font-size:12px;color:var(--text3);margin-top:2px;letter-spacing:0.04em}
+
+/* SECTION COMMON */
+section{padding:100px 2rem}
+.section-inner{max-width:1100px;margin:0 auto}
+.section-tag{font-family:var(--mono);font-size:11px;color:var(--teal);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:1rem}
+.section-title{font-family:var(--mono);font-size:clamp(1.6rem,3vw,2.2rem);font-weight:600;margin-bottom:1rem;line-height:1.2}
+.section-desc{color:var(--text2);font-size:1rem;max-width:600px;line-height:1.8}
+.divider{height:1px;background:var(--border);max-width:1100px;margin:0 auto}
+
+/* ABOUT */
+#about{background:var(--bg2)}
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:start;margin-top:3.5rem}
+.about-feature{display:flex;gap:16px;margin-bottom:2rem}
+.feature-icon{width:40px;height:40px;border-radius:8px;background:var(--teal-dim);border:1px solid var(--teal-mid)40;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px}
+.feature-title{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--text);margin-bottom:4px}
+.feature-desc{font-size:13px;color:var(--text2);line-height:1.7}
+.about-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:2rem;position:relative;overflow:hidden}
+.about-card::before{content:'GT';position:absolute;top:-10px;right:-10px;font-family:var(--mono);font-size:80px;font-weight:700;color:var(--teal);opacity:0.04;line-height:1;pointer-events:none}
+.card-quote{font-family:var(--mono);font-size:13px;color:var(--text2);line-height:1.8;border-left:2px solid var(--teal);padding-left:1rem;margin-bottom:1.5rem;font-style:italic}
+.card-label{font-family:var(--mono);font-size:11px;color:var(--teal);letter-spacing:0.08em;margin-bottom:8px}
+.card-highlight{font-size:13px;color:var(--text);background:var(--bg4);border:1px solid var(--border);border-radius:6px;padding:10px 14px;font-family:var(--mono)}
+
+/* PROCESS */
+#process{background:var(--bg)}
+.process-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3rem}
+.process-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:2rem;position:relative;transition:border-color 0.2s}
+.process-card:hover{border-color:var(--teal)60}
+.process-num{font-family:var(--mono);font-size:11px;color:var(--text3);letter-spacing:0.08em;margin-bottom:1rem}
+.process-name{font-family:var(--mono);font-size:16px;font-weight:500;color:var(--text);margin-bottom:0.75rem}
+.process-desc{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:1.2rem}
+.process-tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-family:var(--mono);font-size:10px;padding:3px 8px;background:var(--teal-dim);color:var(--teal);border-radius:4px;letter-spacing:0.04em}
+.tag.coral{background:var(--coral-dim);color:var(--coral)}
+.tag.purple{background:#8b7cf818;color:var(--purple)}
+.process-connector{display:none}
+
+/* METRICS */
+#metrics{background:var(--bg2)}
+.metrics-top{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:3rem 0 2.5rem}
+.metric-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.5rem 1.75rem;position:relative;overflow:hidden}
+.metric-card.highlight{border-color:var(--teal)50;background:linear-gradient(135deg,var(--teal-dim),var(--bg3))}
+.metric-label{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.5rem}
+.metric-val{font-family:var(--mono);font-size:2.4rem;font-weight:600;color:var(--teal);line-height:1}
+.metric-sub{font-size:12px;color:var(--text3);margin-top:6px}
+.stages-table{width:100%;border-collapse:collapse;margin-top:2rem}
+.stages-table th{font-family:var(--mono);font-size:11px;color:var(--text3);letter-spacing:0.08em;text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);font-weight:400}
+.stages-table td{padding:14px 12px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text2)}
+.stages-table tr:last-child td{border-bottom:none}
+.stages-table tr:hover td{background:var(--bg4);color:var(--text)}
+.stage-name{font-family:var(--mono);font-size:13px;color:var(--text)}
+.stage-num-cell{font-family:var(--mono);font-size:13px;color:var(--text3)}
+.acc-bar{display:flex;align-items:center;gap:10px}
+.bar-bg{flex:1;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;background:var(--teal)}
+.acc-label{font-family:var(--mono);font-size:12px;color:var(--teal);min-width:40px;text-align:right}
+.badge{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:4px}
+.badge-ok{background:var(--teal-dim);color:var(--teal)}
+.badge-warn{background:#ba751718;color:#ba7517}
+.badge-err{background:var(--coral-dim);color:var(--coral)}
+
+/* LCS VIZ */
+.lcs-row{display:flex;gap:3px;flex-wrap:wrap;margin-top:1.5rem}
+.lcs-cell{width:20px;height:20px;border-radius:3px}
+
+/* TEAM */
+#team{background:var(--bg)}
+.team-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:2.5rem}
+.team-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.5rem;text-align:center;transition:border-color 0.2s}
+.team-card:hover{border-color:var(--teal)50}
+.team-avatar{width:60px;height:60px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:18px;font-weight:600;border:1px solid var(--border2)}
+.avatar-teal{background:var(--teal-dim);color:var(--teal)}
+.avatar-coral{background:var(--coral-dim);color:var(--coral)}
+.avatar-purple{background:#8b7cf818;color:var(--purple)}
+.team-name{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--text);margin-bottom:4px}
+.team-role{font-size:11px;color:var(--text3);letter-spacing:0.04em;margin-bottom:12px}
+.team-desc{font-size:12px;color:var(--text2);line-height:1.6}
+
+/* FAQ */
+#faq{background:var(--bg2)}
+.faq-list{margin-top:2.5rem;display:flex;flex-direction:column;gap:1px;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.faq-item{background:var(--bg3)}
+.faq-q{width:100%;text-align:left;padding:1.25rem 1.5rem;background:none;border:none;color:var(--text);font-family:var(--mono);font-size:13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:1rem;border-bottom:1px solid var(--border)}
+.faq-item:last-child .faq-q{border-bottom:none}
+.faq-q:hover{color:var(--teal)}
+.faq-q .arrow{color:var(--text3);transition:transform 0.2s;flex-shrink:0}
+.faq-q.open .arrow{transform:rotate(45deg);color:var(--teal)}
+.faq-a{display:none;padding:0 1.5rem 1.25rem;font-size:13px;color:var(--text2);line-height:1.8}
+.faq-a.open{display:block}
+
+/* FOOTER */
+footer{background:var(--bg);border-top:1px solid var(--border);padding:2.5rem 2rem;text-align:center}
+.footer-logo{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--teal);margin-bottom:8px;letter-spacing:0.08em}
+.footer-sub{font-size:12px;color:var(--text3)}
+
+@media(max-width:768px){
+  .about-grid,.process-grid,.team-grid,.metrics-top{grid-template-columns:1fr}
+  .hero-stats{gap:1.5rem;flex-wrap:wrap}
+  .nav-links{display:none}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="#hero">DFIR<span>-Bench</span></a>
+    <ul class="nav-links">
+      <li><a href="#about">개요</a></li>
+      <li><a href="#process">프로세스</a></li>
+      <li><a href="#metrics">평가 결과</a></li>
+      <li><a href="#team">팀</a></li>
+      <li><a href="#faq">FAQ</a></li>
+    </ul>
+  </div>
+</nav>
+
+<section id="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-inner">
+    <div class="hero-badge">ELP Team · 2025</div>
+    <h1 class="hero-title">
+      LLM 기반 디지털 포렌식<br>
+      <span class="accent">자동 정량 평가 프레임워크</span>
+    </h1>
+    <p class="hero-sub">
+      Ground Truth(GT) 자동 생성을 통해 LLM의 로그 분석 능력을 정량적으로 측정합니다.
+      GT 없이는 구조적으로 불가능했던 벤치마킹을 실현합니다.
+    </p>
+    <div class="hero-cta">
+      <a class="btn-primary" href="#metrics">평가 결과 보기 →</a>
+      <a class="btn-outline" href="#process">프레임워크 구조</a>
+    </div>
+    <div class="hero-stats">
+      <div>
+        <div class="hero-stat-num">84.3%</div>
+        <div class="hero-stat-label">Stage-level Accuracy</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">0.81</div>
+        <div class="hero-stat-label">Sequence Similarity</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">6</div>
+        <div class="hero-stat-label">PoC 공격 단계</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">39</div>
+        <div class="hero-stat-label">GT 이벤트 수</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<section id="about">
+  <div class="section-inner">
+    <div class="section-tag">about</div>
+    <div class="section-title">왜 Ground Truth가 필요한가</div>
+    <div class="about-grid">
+      <div>
+        <div class="about-feature">
+          <div class="feature-icon">🔍</div>
+          <div>
+            <div class="feature-title">정량적 평가의 구조적 필요성</div>
+            <div class="feature-desc">시나리오 설명만으로는 LLM의 탐지 성능을 수치로 측정할 수 없습니다. GT는 평가 기준이자 정량화의 근거입니다.</div>
+          </div>
+        </div>
+        <div class="about-feature">
+          <div class="feature-icon">⚙️</div>
+          <div>
+            <div class="feature-title">자동 GT 생성</div>
+            <div class="feature-desc">PoC 기반 공격 시나리오 실행 중 발생하는 Windows Event Log / Sysmon 이벤트를 단계별로 수집해 JSON 형식의 GT를 자동 생성합니다.</div>
+          </div>
+        </div>
+        <div class="about-feature">
+          <div class="feature-icon">📊</div>
+          <div>
+            <div class="feature-title">3가지 평가 지표</div>
+            <div class="feature-desc">Stage-level Accuracy, Sequence Similarity(LCS 기반), Scenario-level Accuracy를 통해 다각도 정량 평가를 수행합니다.</div>
+          </div>
+        </div>
+      </div>
+      <div class="about-card">
+        <div class="card-quote">
+          "시나리오는 설명이고, GT는 평가 기준이다. GT 없이는 정량적 평가가 구조적으로 불가능하다."
+        </div>
+        <div class="card-label">GT 데이터 형식</div>
+        <div class="card-highlight">
+          {<br>
+          &nbsp;&nbsp;"stage": "초기 접근",<br>
+          &nbsp;&nbsp;"expected_events": [4624, 4648, 4625],<br>
+          &nbsp;&nbsp;"log_source": "Windows Event Log"<br>
+          }
+        </div>
+        <br>
+        <div class="card-label">평가 대상 로그</div>
+        <div class="card-highlight">Windows Event Log · Sysmon</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<section id="process">
+  <div class="section-inner">
+    <div class="section-tag">process</div>
+    <div class="section-title">프레임워크 구조</div>
+    <p class="section-desc">PoC 실행부터 GT 생성, LLM 평가, 정량 측정까지 자동화된 파이프라인입니다.</p>
+    <div class="process-grid">
+      <div class="process-card">
+        <div class="process-num">01 —</div>
+        <div class="process-name">PoC 시나리오 실행</div>
+        <div class="process-desc">NIST CFReDS 기반 6단계 데이터 유출 시나리오를 VM 환경에서 실행합니다. 각 단계의 공격 행위가 로그에 기록됩니다.</div>
+        <div class="process-tags">
+          <span class="tag">Windows VM</span>
+          <span class="tag">6-stage Attack</span>
+          <span class="tag coral">NIST CFReDS</span>
+        </div>
+      </div>
+      <div class="process-card">
+        <div class="process-num">02 —</div>
+        <div class="process-name">GT 자동 생성</div>
+        <div class="process-desc">시나리오 실행 중 수집된 이벤트를 단계별로 분류해 JSON 형식의 Ground Truth를 자동 생성합니다. 행위 수준 매칭을 평가 기준으로 사용합니다.</div>
+        <div class="process-tags">
+          <span class="tag">JSON Format</span>
+          <span class="tag">Event ID Mapping</span>
+          <span class="tag purple">Behavior-level</span>
+        </div>
+      </div>
+      <div class="process-card">
+        <div class="process-num">03 —</div>
+        <div class="process-name">LLM 평가 및 정량 측정</div>
+        <div class="process-desc">LLM이 분석한 로그 결과를 GT와 비교해 Stage Accuracy, Sequence Similarity, Scenario Accuracy를 자동 산출합니다.</div>
+        <div class="process-tags">
+          <span class="tag">LCS Algorithm</span>
+          <span class="tag coral">GPT-4o</span>
+          <span class="tag purple">3 Metrics</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<section id="metrics">
+  <div class="section-inner">
+    <div class="section-tag">evaluation results</div>
+    <div class="section-title">정량 평가 결과</div>
+    <p class="section-desc">PoC 시나리오 1회 실행 기준 · GPT-4o 모델 평가</p>
+
+    <div class="metrics-top">
+      <div class="metric-card highlight">
+        <div class="metric-label">Stage-level Accuracy</div>
+        <div class="metric-val">84.3%</div>
+        <div class="metric-sub">6단계 평균 정확도</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Sequence Similarity</div>
+        <div class="metric-val">0.81</div>
+        <div class="metric-sub">LCS 기반 행위 정렬 유사도</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">GT Events</div>
+        <div class="metric-val">39</div>
+        <div class="metric-sub">감지 33 / 미감지 6</div>
+      </div>
+    </div>
+
+    <table class="stages-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>공격 단계</th>
+          <th>GT</th>
+          <th>감지</th>
+          <th>미감지</th>
+          <th>정확도</th>
+          <th>상태</th>
+          <th>주요 Event ID</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="stage-num-cell">01</td>
+          <td class="stage-name">초기 접근</td>
+          <td class="stage-num-cell">8</td>
+          <td class="stage-num-cell">7</td>
+          <td class="stage-num-cell">1</td>
+          <td><div class="acc-bar"><div class="bar-bg"><div class="bar-fill" style="width:87.5%"></div></div><span class="acc-label">87.5%</span></div></td>
+          <td><span class="badge badge-ok">양호</span></td>
+          <td class="stage-num-cell" style="font-size:11px">4624, 4648, 4625</td>
+        </tr>
+        <tr>
+          <td class="stage-num-cell">02</td>
+          <td class="stage-name">권한 상승</td>
+          <td class="stage-num-cell">5</td>
+          <td class="stage-num-cell">4</td>
+          <td class="stage-num-cell">1</td>
+          <td><div class="acc-bar"><div class="bar-bg"><div class="bar-fill" style="width:80%"></div></div><span class="acc-label">80.0%</span></div></td>
+          <td><span class="badge badge-warn">주의</span></td>
+          <td class="stage-num-cell" style="font-size:11px">4672, 4673, 4688</td>
+        </tr>
+        <tr>
+          <td class="stage-num-cell">03</td>
+          <td class="stage-name">내부 탐색</td>
+          <td class="stage-num-cell">6</td>
+          <td class="stage-num-cell">6</td>
+          <td class="stage-num-cell">0</td>
+          <td><div class="acc-bar"><div class="bar-bg"><div class="bar-fill" style="width:100%;background:var(--teal)"></div></div><span class="acc-label">100%</span></div></td>
+          <td><span class="badge badge-ok">완전</span></td>
+          <td class="stage-num-cell" style="font-size:11px">4663, 4656, 5145</td>
+        </tr>
+        <tr>
+          <td class="stage-num-cell">04</td>
+          <td class="stage-name">데이터 수집</td>
+          <td class="stage-num-cell">9</td>
+          <td class="stage-num-cell">7</td>
+          <td class="stage-num-cell">2</td>
+          <td><div class="acc-bar"><div class="bar-bg"><div class="bar-fill" style="width:77.8%;background:var(--coral)"></div></div><span class="acc-label" style="color:var(--coral)">77.8%</span></div></td>
+          <td><span class="badge badge-err">미흡</span></td>
+          <td class="stage-num-cell" style="font-size:11px">4663, 11, 23</td>
+        </tr>
+        <tr>
+          <td class="stage-num-cell">05</td>
+          <td class="stage-name">데이터 유출</td>
+          <td class="stage-num-cell">7</td>
+          <td class="stage-num-cell">6</td>
+          <td class="stage-num-cell">1</td>
+          <td><div class="acc-bar"><div class="bar-bg"><div class="bar-fill" style="width:85.7%"></div></div><span class="acc-label">85.7%</span></div></td>
+          <td><span class="badge badge-ok">양호</span></td>
+          <td class="stage-num-cell" style="font-size:11px">3, 22, 4624</td>
+        </tr>
+        <tr>
+          <td class="stage-num-cell">06</td>
+          <td class="stage-name">흔적 삭제</td>
+          <td class="stage-num-cell">4</td>
+          <td class="stage-num-cell">3</td>
+          <td class="stage-num-cell">1</td>
+          <td><div class="acc-bar"><div class="bar-bg"><div class="bar-fill" style="width:75%;background:var(--coral)"></div></div><span class="acc-label" style="color:var(--coral)">75.0%</span></div></td>
+          <td><span class="badge badge-warn">주의</span></td>
+          <td class="stage-num-cell" style="font-size:11px">4688, 4689</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top:2.5rem;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.5rem 1.75rem">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);letter-spacing:0.08em;margin-bottom:1rem">SEQUENCE SIMILARITY — LCS 기반 행위 정렬 시각화</div>
+      <div class="lcs-row" id="lcsrow"></div>
+      <div style="display:flex;gap:1.5rem;margin-top:12px;font-family:var(--mono);font-size:11px;color:var(--text3);align-items:center">
+        <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:2px;background:var(--teal);display:inline-block"></span>LCS 일치</span>
+        <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:2px;background:var(--coral);display:inline-block"></span>미일치</span>
+        <span style="margin-left:auto">LCS = 26 / 32 → <strong style="color:var(--teal)">0.81</strong></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<section id="team">
+  <div class="section-inner">
+    <div class="section-tag">team</div>
+    <div class="section-title">ELP 팀</div>
+    <div class="team-grid">
+      <div class="team-card">
+        <div class="team-avatar avatar-teal">운</div>
+        <div class="team-name">팀원 1 (운)</div>
+        <div class="team-role">Lead Researcher</div>
+        <div class="team-desc">프레임워크 설계 총괄 · GT 자동 생성 구현 · PoC 시나리오 구성 · 논문 작성</div>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar avatar-coral">수</div>
+        <div class="team-name">전수아</div>
+        <div class="team-role">Development Team</div>
+        <div class="team-desc">LLM 평가 파이프라인 구현 · 메트릭 산출 로직 · 실험 환경 구축</div>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar avatar-purple">지</div>
+        <div class="team-name">윤지원</div>
+        <div class="team-role">Research Team</div>
+        <div class="team-desc">로그 수집 및 전처리 · 시퀀스 유사도 분석 · 논문 작성 및 실험 검증</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<section id="faq">
+  <div class="section-inner">
+    <div class="section-tag">faq</div>
+    <div class="section-title">자주 묻는 질문</div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          이 프레임워크는 어떤 문제를 해결하나요?
+          <span class="arrow">＋</span>
+        </button>
+        <div class="faq-a">GT(Ground Truth) 없이는 LLM의 디지털 포렌식 로그 분석 성능을 정량적으로 측정할 수 없습니다. 본 프레임워크는 GT 자동 생성을 통해 이 구조적 한계를 해결합니다.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          어떤 로그를 사용하나요?
+          <span class="arrow">＋</span>
+        </button>
+        <div class="faq-a">시나리오 유형에 따라 Windows Event Log와 Sysmon 로그를 선택적으로 사용합니다. 로그 소스 선택은 Sysmon에 한정되지 않고 시나리오 특성에 따라 결정됩니다.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          GT 생성은 어떻게 자동화되나요?
+          <span class="arrow">＋</span>
+        </button>
+        <div class="faq-a">PoC 공격 시나리오 실행 중 발생하는 이벤트를 단계별로 캡처해 JSON 형식으로 저장합니다. 이벤트 ID 기준이 아닌 행위 수준(behavior-level) 매칭을 평가 기준으로 사용합니다.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          Sequence Similarity는 어떻게 계산하나요?
+          <span class="arrow">＋</span>
+        </button>
+        <div class="faq-a">GT 이벤트 시퀀스와 LLM이 탐지한 시퀀스 간 LCS(최장 공통 부분수열)를 계산해 유사도를 산출합니다. 이벤트 순서 보존 여부까지 반영하는 지표입니다.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          PoC 시나리오는 어디서 가져왔나요?
+          <span class="arrow">＋</span>
+        </button>
+        <div class="faq-a">NIST CFReDS 데이터 유출 시나리오를 기반으로 구성했습니다. VM 환경에서 6단계 공격을 직접 실행해 실제 로그와 GT를 생성했습니다.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">DFIR-Bench</div>
+  <div class="footer-sub">ELP Team · 2025 · AI 기반 디지털 포렌식 LLM 벤치마크 프레임워크</div>
+</footer>
+
+<script>
+const lcs=[1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,0,1,1,1,0,1,1,1,1,1,1,0,1,1,1];
+const row=document.getElementById('lcsrow');
+lcs.forEach(v=>{
+  const d=document.createElement('div');
+  d.className='lcs-cell';
+  d.style.background=v?'var(--teal)':'var(--coral)';
+  d.style.opacity=v?'0.8':'0.5';
+  row.appendChild(d);
+});
+
+function toggleFaq(btn){
+  const a=btn.nextElementSibling;
+  const isOpen=a.classList.contains('open');
+  document.querySelectorAll('.faq-a.open').forEach(el=>el.classList.remove('open'));
+  document.querySelectorAll('.faq-q.open').forEach(el=>el.classList.remove('open'));
+  if(!isOpen){a.classList.add('open');btn.classList.add('open')}
+}
+
+// scroll fade-in
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.style.opacity='1';e.target.style.transform='translateY(0)'}});
+},{threshold:0.1});
+document.querySelectorAll('.process-card,.team-card,.metric-card,.about-feature').forEach(el=>{
+  el.style.opacity='0';
+  el.style.transform='translateY(20px)';
+  el.style.transition='opacity 0.5s ease, transform 0.5s ease';
+  observer.observe(el);
+});
+</script>
+</body>
+</html>
