@@ -1,0 +1,80 @@
+[
+  {
+    "level": "level0_baseline",
+    "avg_stage_accuracy": 0.16666666666666666,
+    "avg_sequence_similarity": 0.4166666666666667,
+    "avg_scenario_accuracy": 0.5333333333333333,
+    "std_stage_accuracy": 0.02946278254943948,
+    "std_sequence_similarity": 0.02946278254943948,
+    "std_scenario_accuracy": 0.05999693900976767,
+    "raw": {
+      "stage_accuracy": [
+        0.125,
+        0.1875,
+        0.1875
+      ],
+      "sequence_similarity": [
+        0.4375,
+        0.375,
+        0.4375
+      ],
+      "scenario_accuracy": [
+        0.6,
+        0.45454545454545453,
+        0.5454545454545454
+      ]
+    }
+  },
+  {
+    "level": "level1_shuffle",
+    "avg_stage_accuracy": 0.1875,
+    "avg_sequence_similarity": 0.4166666666666667,
+    "avg_scenario_accuracy": 0.5303030303030303,
+    "std_stage_accuracy": 0.0,
+    "std_sequence_similarity": 0.02946278254943948,
+    "std_scenario_accuracy": 0.021427478217774146,
+    "raw": {
+      "stage_accuracy": [
+        0.1875,
+        0.1875,
+        0.1875
+      ],
+      "sequence_similarity": [
+        0.4375,
+        0.4375,
+        0.375
+      ],
+      "scenario_accuracy": [
+        0.5454545454545454,
+        0.5454545454545454,
+        0.5
+      ]
+    }
+  },
+  {
+    "level": "level3_shuffle_noise",
+    "avg_stage_accuracy": 0.20833333333333334,
+    "avg_sequence_similarity": 0.4375,
+    "avg_scenario_accuracy": 0.5454545454545454,
+    "std_stage_accuracy": 0.02946278254943948,
+    "std_sequence_similarity": 0.0,
+    "std_scenario_accuracy": 0.0,
+    "raw": {
+      "stage_accuracy": [
+        0.25,
+        0.1875,
+        0.1875
+      ],
+      "sequence_similarity": [
+        0.4375,
+        0.4375,
+        0.4375
+      ],
+      "scenario_accuracy": [
+        0.5454545454545454,
+        0.5454545454545454,
+        0.5454545454545454
+      ]
+    }
+  }
+]
