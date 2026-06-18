@@ -1,0 +1,57 @@
+{
+    "scenario_id":  "case_attack_001",
+    "scenario_name":  "scripted_collection_and_cleanup",
+    "run_timestamp":  "2026-03-25T01:05:01.4552148+09:00",
+    "actions":  [
+                    {
+                        "action_id":  1,
+                        "timestamp":  "2026-03-25T01:04:52.8556768+09:00",
+                        "action_type":  "powershell_execute",
+                        "technique_id":  "T1059",
+                        "target":  "powershell.exe",
+                        "status":  "success",
+                        "message":  "PowerShell command executed successfully.",
+                        "description":  "PowerShell을 사용하여 후속 공격 단계를 수행할 프로세스를 실행"
+                    },
+                    {
+                        "action_id":  2,
+                        "timestamp":  "2026-03-25T01:04:56.0416165+09:00",
+                        "action_type":  "process_execute",
+                        "technique_id":  "T1059",
+                        "target":  "C:\\temp\\collector.exe",
+                        "status":  "success",
+                        "message":  "Process executed successfully. PID=11204",
+                        "description":  "추가 실행 파일을 구동하여 실제 파일 생성 및 수집 행위를 시작"
+                    },
+                    {
+                        "action_id":  3,
+                        "timestamp":  "2026-03-25T01:04:57.0953182+09:00",
+                        "action_type":  "file_create",
+                        "technique_id":  "T1005",
+                        "target":  "C:\\temp\\secret.txt",
+                        "status":  "success",
+                        "message":  "File created successfully.",
+                        "description":  "수집 또는 탈취 대상으로 볼 수 있는 민감 파일을 로컬 시스템에 생성"
+                    },
+                    {
+                        "action_id":  4,
+                        "timestamp":  "2026-03-25T01:04:59.4145904+09:00",
+                        "action_type":  "file_compress",
+                        "technique_id":  "T1560",
+                        "target":  "C:\\temp\\secret.zip",
+                        "status":  "success",
+                        "message":  "File compressed successfully.",
+                        "description":  "생성된 파일을 압축하여 이후 이동 또는 유출이 가능한 형태로 준비"
+                    },
+                    {
+                        "action_id":  5,
+                        "timestamp":  "2026-03-25T01:05:00.4466197+09:00",
+                        "action_type":  "file_delete",
+                        "technique_id":  "T1070",
+                        "target":  "C:\\temp\\secret.zip",
+                        "status":  "success",
+                        "message":  "File deleted successfully.",
+                        "description":  "원본 파일을 삭제하여 공격 흔적을 줄이고 포렌식 분석을 어렵게 만듦"
+                    }
+                ]
+}
