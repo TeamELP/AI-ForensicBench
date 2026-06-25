@@ -1,0 +1,448 @@
+﻿{
+  "scenario_id": "win11_memory_inference_extended_v3",
+  "scenario_name": "메모리기반_PowerShell_혼합행위_추론형_시나리오",
+  "scenario_type": "advanced_attack",
+
+  "description": "PowerShell EncodedCommand 기반 메모리 실행 이후 파일 생성 없이 네트워크 통신과 프로세스 접근, 파일 생성 및 삭제, 지연된 persistence가 혼합되어 나타나며 모든 행위는 로그로 관측되지만 공격 유형을 명확히 단정하기 어려운 추론형 시나리오",
+
+  "environment_context": {
+    "environment_type": "single_windows_host",
+    "os": ["Windows 11"],
+    "logging_sources": [
+      "Windows Security Log",
+      "Sysmon Operational Log"
+    ],
+    "required_logging_configuration": {
+      "security_events": [4688, 4656, 4663, 4698],
+      "sysmon_events": [1, 3, 10, 11, 22, 26]
+    }
+  },
+
+  "artifacts_definition": {
+    "base_directory": "C:\\ProgramData\\Microsoft\\SysCache\\{8F3A2C1B}",
+    "decoy_file_1": "C:\\ProgramData\\Microsoft\\SysCache\\TelemetryCache.bin",
+    "temp_file": "C:\\ProgramData\\Windows\\Caches\\cache.tmp",
+    "persistence_key": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\WindowsCache",
+    "task_name": "WindowsCacheTask"
+  },
+
+  "scenario_flow": [
+
+    {
+      "stage_id": 1,
+      "stage_name": "powershell_spawn",
+      "description": "PowerShell 프로세스 실행",
+      "action_type": "process_start",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Execution",
+        "technique_id": "T1059.001",
+        "technique_name": "Command and Scripting Interpreter: PowerShell"
+      },
+      "expected_logs": {
+        "security": [4688],
+        "sysmon": [1]
+      },
+      "expected_artifacts": [
+        "powershell.exe 실행",
+        "Hidden WindowStyle 실행"],
+      "notes": "숨김 창으로 실행된 PowerShell 프로세스. 부모 프로세스 및 실행 인자 확인 필요"
+    },
+
+    {
+      "stage_id": 2,
+      "stage_name": "encoded_command_execution",
+      "description": "EncodedCommand 기반 명령 실행 (메모리 기반 실행 가능성)",
+      "action_type": "command_execution",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Defense Evasion",
+        "technique_id": "T1027",
+        "technique_name": "Obfuscated Files or Information"
+      },
+      "expected_logs": {
+        "security": [4688],
+        "sysmon": [1]
+      },
+      "expected_artifacts": [
+        "EncodedCommand 실행",
+        "Base64 명령행 흔적"],
+      "notes": "Base64 인코딩된 명령 실행. 디코딩 없이는 실제 페이로드 판별 불가"
+    },
+
+    {
+      "stage_id": 3,
+      "stage_name": "initial_network_connection",
+      "description": "외부 IP로 단발성 네트워크 연결 시도",
+      "action_type": "network_connection",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Command and Control",
+        "technique_id": "T1071.004",
+        "technique_name": "Application Layer Protocol: DNS"
+      },
+      "expected_logs": {
+        "security": [],
+        "sysmon": [3, 22]
+      },
+      "expected_artifacts": [
+        "DNS 기반 외부 연결",
+        "powershell.exe 네트워크 통신"],
+      "notes": "DNS 포트(53) 단발성 연결. 출발지 프로세스 및 연결 패턴 분석 필요"
+    },
+
+    {
+      "stage_id": 4,
+      "stage_name": "secondary_network_connection",
+      "description": "추가적인 외부 연결 발생 후 실행 파일 생성 없음 (메모리 기반 실행 가능성 강화)",
+      "action_type": "network_connection",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Command and Control",
+        "technique_id": "T1071.001",
+        "technique_name": "Application Layer Protocol: Web Protocols"
+      },
+      "expected_logs": {
+        "security": [],
+        "sysmon": [3, 22]
+      },
+      "expected_artifacts": [
+        "추가 외부 연결",
+        "파일 없는 네트워크 활동"],
+      "notes": "파일 생성 없이 반복 네트워크 연결 발생. 메모리 기반 실행 후 C2 재접속 패턴으로 해석 가능"
+    },
+
+    {
+      "stage_id": 5,
+      "stage_name": "process_access_explorer",
+      "description": "explorer.exe 프로세스 접근 시도. Sysmon Event 10(ProcessAccess) 발생. SourceImage: powershell.exe, TargetImage: explorer.exe, GrantedAccess: 0x1F0FFF(PROCESS_ALL_ACCESS). 코드 인젝션 전 단계 패턴",
+      "action_type": "process_access",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Defense Evasion",
+        "technique_id": "T1055.001",
+        "technique_name": "Process Injection: Dynamic-link Library Injection"
+      },
+      "expected_logs": {
+        "security": [],
+        "sysmon": [10]
+      },
+      "expected_artifacts": [
+        "explorer.exe ProcessAccess",
+        "PROCESS_ALL_ACCESS 권한"],
+      "notes": "PROCESS_ALL_ACCESS(0x1F0FFF)로 explorer.exe 접근. 코드 인젝션 전 단계 패턴으로 해석 가능"
+    },
+
+    {
+      "stage_id": 6,
+      "stage_name": "process_access_svchost",
+      "description": "svchost.exe 프로세스 접근 시도. Sysmon Event 10(ProcessAccess) 발생. SourceImage: powershell.exe, TargetImage: svchost.exe, GrantedAccess: 0x1F0FFF(PROCESS_ALL_ACCESS). 인젝션 대상 프로세스 선정 패턴",
+      "action_type": "process_access",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Defense Evasion",
+        "technique_id": "T1055.001",
+        "technique_name": "Process Injection: Dynamic-link Library Injection"
+      },
+      "expected_logs": {
+        "security": [],
+        "sysmon": [10]
+      },
+      "expected_artifacts": [
+        "svchost.exe ProcessAccess",
+        "인젝션 대상 접근"],
+      "notes": "PROCESS_ALL_ACCESS(0x1F0FFF)로 svchost.exe 접근. 인젝션 전 단계로 해석 가능"
+    },
+
+    {
+      "stage_id": 7,
+      "stage_name": "irregular_network_activity",
+      "description": "불규칙한 외부 네트워크 통신 발생",
+      "action_type": "network_connection",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Command and Control",
+        "technique_id": "T1571",
+        "technique_name": "Non-Standard Port"
+      },
+      "expected_logs": {
+        "security": [],
+        "sysmon": [3, 22]
+      },
+      "expected_artifacts": [
+        "비표준 포트 통신",
+        "불규칙 네트워크 패턴"],
+      "notes": "프로세스 접근 이후 발생하는 불규칙 네트워크. 인젝션 성공 후 C2 비콘 패턴으로 해석 가능"
+    },
+
+    {
+      "stage_id": 8,
+      "stage_name": "decoy_file_creation_1",
+      "description": "사용되지 않는 더미 파일 생성 (TelemetryCache.bin)",
+      "action_type": "file_create",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Defense Evasion",
+        "technique_id": "T1036.005",
+        "technique_name": "Masquerading: Match Legitimate Name or Location"
+      },
+      "expected_logs": {
+        "security": [4663],
+        "sysmon": [11]
+      },
+      "expected_artifacts": [
+        "TelemetryCache.bin 생성",
+        "정상 파일명 위장"],
+      "notes": "정상 텔레메트리 파일명으로 위장한 더미 파일 생성. 이후 삭제되므로 생성-삭제 쌍으로 분석 필요"
+    },
+
+    {
+      "stage_id": 9,
+      "stage_name": "secondary_process_spawn",
+      "description": "추가 PowerShell 또는 cmd 프로세스 실행",
+      "action_type": "process_start",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Execution",
+        "technique_id": "T1059.001",
+        "technique_name": "Command and Scripting Interpreter: PowerShell"
+      },
+      "expected_logs": {
+        "security": [4688],
+        "sysmon": [1]
+      },
+      "expected_artifacts": [
+        "추가 PowerShell/cmd 실행",
+        "하위 프로세스 생성"],
+      "notes": "EncodedCommand 기반 추가 프로세스 실행. 프로세스 계보와 실행 인자 패턴으로 구분 필요"
+    },
+
+    {
+      "stage_id": 10,
+      "stage_name": "network_retry_pattern",
+      "description": "네트워크 재시도 패턴 발생",
+      "action_type": "network_connection",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Command and Control",
+        "technique_id": "T1071.001",
+        "technique_name": "Application Layer Protocol: Web Protocols"
+      },
+      "expected_logs": {
+        "security": [],
+        "sysmon": [3, 22]
+      },
+      "expected_artifacts": [
+        "HTTP 재시도 연결",
+        "지속적 외부 통신"],
+      "notes": "HTTP 포트(80) 반복 연결. C2 재시도 패턴으로 해석 가능"
+    },
+
+    {
+      "stage_id": 11,
+      "stage_name": "privilege_escalation_attempt",
+      "description": "관리자 권한 PowerShell 실행 시도",
+      "action_type": "process_execution",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Discovery",
+        "technique_id": "T1033",
+        "technique_name": "System Owner/User Discovery"
+      },
+      "expected_logs": {
+        "security": [4688],
+        "sysmon": [1]
+      },
+      "expected_artifacts": [
+        "whoami 실행",
+        "권한 확인 행위"],
+      "notes": "whoami 실행으로 현재 권한 확인. 권한 상승 전 정찰 행위로 해석 가능"
+    },
+
+    {
+      "stage_id": 12,
+      "stage_name": "post_escalation_network",
+      "description": "권한 상승 이후 추가 네트워크 통신",
+      "action_type": "network_connection",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Command and Control",
+        "technique_id": "T1071.001",
+        "technique_name": "Application Layer Protocol: Web Protocols"
+      },
+      "expected_logs": {
+        "security": [],
+        "sysmon": [3, 22]
+      },
+      "expected_artifacts": [
+        "권한 확인 이후 통신",
+        "추가 외부 연결"],
+      "notes": "권한 확인 직후 발생하는 네트워크. 권한 상승 성공 보고 또는 추가 페이로드 수신 패턴으로 해석 가능"
+    },
+
+    {
+      "stage_id": 13,
+      "stage_name": "runkey_persistence",
+      "description": "RunKey 레지스트리 등록 (지속성 확보)",
+      "action_type": "registry_modification",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Persistence",
+        "technique_id": "T1547.001",
+        "technique_name": "Boot or Logon Autostart Execution: Registry Run Keys"
+      },
+      "expected_logs": {
+        "security": [4656, 4663],
+        "sysmon": []
+      },
+      "expected_artifacts": [
+        "RunKey 등록",
+        "WindowsCache persistence"],
+      "notes": "HKCU Run 키에 WindowsCache로 등록. 등록값 및 실행 경로 확인 필요"
+    },
+
+    {
+      "stage_id": 14,
+      "stage_name": "scheduled_task_creation",
+      "description": "Scheduled Task 생성",
+      "action_type": "task_creation",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Persistence",
+        "technique_id": "T1053.005",
+        "technique_name": "Scheduled Task/Job: Scheduled Task"
+      },
+      "expected_logs": {
+        "security": [4698],
+        "sysmon": [1]
+      },
+      "expected_artifacts": [
+        "Scheduled Task 생성",
+        "WindowsCacheTask 등록"],
+      "notes": "onlogon 트리거로 WindowsCacheTask 등록. 4698 이벤트는 Task Scheduler 서비스 지연으로 늦게 기록될 수 있음"
+    },
+
+    {
+      "stage_id": 15,
+      "stage_name": "file_cleanup_1",
+      "description": "TelemetryCache.bin 파일 삭제",
+      "action_type": "file_delete",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Defense Evasion",
+        "technique_id": "T1070.004",
+        "technique_name": "Indicator Removal: File Deletion"
+      },
+      "expected_logs": {
+        "security": [4663],
+        "sysmon": [26]
+      },
+      "expected_artifacts": [
+        "TelemetryCache.bin 삭제",
+        "Indicator Removal"],
+      "notes": "Stage 8에서 생성한 더미 파일 삭제. 생성-삭제 쌍을 연결하여 분석 필요"
+    },
+
+    {
+      "stage_id": 16,
+      "stage_name": "intermittent_network_1",
+      "description": "간헐적 외부 통신 유지",
+      "action_type": "network_connection",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Command and Control",
+        "technique_id": "T1573.001",
+        "technique_name": "Encrypted Channel: Symmetric Cryptography"
+      },
+      "expected_logs": {
+        "security": [],
+        "sysmon": [3, 22]
+      },
+      "expected_artifacts": [
+        "HTTPS Beacon 통신",
+        "간헐적 외부 연결"],
+      "notes": "Persistence 확보 이후 간헐적 HTTPS(443) 통신. 비콘 주기 식별이 핵심"
+    },
+
+    {
+      "stage_id": 17,
+      "stage_name": "intermittent_network_2",
+      "description": "추가 간헐적 네트워크 통신",
+      "action_type": "network_connection",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Command and Control",
+        "technique_id": "T1573.001",
+        "technique_name": "Encrypted Channel: Symmetric Cryptography"
+      },
+      "expected_logs": {
+        "security": [],
+        "sysmon": [3, 22]
+      },
+      "expected_artifacts": [
+        "추가 HTTPS 연결",
+        "지속 Beacon 패턴"],
+      "notes": "HTTPS(443) 간헐적 통신 지속. 출발지 프로세스 및 통신 주기로 C2 여부 판단 필요"
+    },
+
+    {
+      "stage_id": 18,
+      "stage_name": "final_process_activity",
+      "description": "마지막 프로세스 실행 흔적",
+      "action_type": "process_start",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Execution",
+        "technique_id": "T1059.003",
+        "technique_name": "Command and Scripting Interpreter: Windows Command Shell"
+      },
+      "expected_logs": {
+        "security": [],
+        "sysmon": [1]
+      },
+      "expected_artifacts": [
+        "cmd.exe 실행",
+        "최종 프로세스 활동"],
+      "notes": "세션 종료 직전 cmd 프로세스 실행. 추가 명령 실행 또는 흔적 제거 목적으로 해석 가능"
+    },
+
+    {
+      "stage_id": 19,
+      "stage_name": "termination",
+      "description": "세션 종료",
+      "action_type": "process_exit",
+      "attack": false,
+      "mitre_mapping": null,
+      "expected_logs": {
+        "security": [],
+        "sysmon": []
+      },
+      "expected_artifacts": [
+        "세션 종료",
+        "Persistence artifact 잔존"],
+      "notes": "정상 세션 종료. GT 기록 대상 아님"
+    }
+
+  ],
+
+  "automation_notes": [
+    "Record-GT is triggered only for attack actions",
+    "Each stage includes a random sleep between 1~3 seconds",
+    "Failed actions must still trigger GT to preserve attack intent",
+    "Logs are collected after full scenario execution using a defined time window",
+    "All artifacts must be created under base_directory",
+    "Noise actions must mimic attack patterns (PowerShell, network, file)",
+    "Noise activities are executed but not recorded in GT"
+  ],
+
+  "pre_execution_requirements": [
+    "PowerShell must be executed as Administrator",
+    "Audit Policy: File System auditing must be enabled",
+    "At least one active network interface must exist",
+    "Execution environment must allow outbound network connections (localhost or external)",
+    "Windows Security auditing for Process Creation (4688) must be enabled",
+    "PowerShell ScriptBlock Logging (4104) must be enabled",
+    "Task Scheduler Operational logging must be enabled",
+    "Sysmon DNS Query logging (Event ID 22) must be enabled"
+  ]
+}

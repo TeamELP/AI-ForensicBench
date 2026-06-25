@@ -1,0 +1,172 @@
+{
+  "timeline": [
+    {
+      "stage": "execution",
+      "evidence_ids": [
+        "2",
+        "132",
+        "133",
+        "134",
+        "135",
+        "136",
+        "137",
+        "138",
+        "139",
+        "140",
+        "141",
+        "142",
+        "143",
+        "144",
+        "145",
+        "146"
+      ],
+      "reason": "Multiple processes indicate execution of malicious code."
+    },
+    {
+      "stage": "discovery",
+      "evidence_ids": [
+        "33",
+        "34",
+        "35"
+      ],
+      "reason": "Processes suggest reconnaissance activities to gather information about the system."
+    },
+    {
+      "stage": "collection",
+      "evidence_ids": [
+        "74",
+        "75",
+        "79",
+        "80",
+        "81",
+        "84",
+        "85",
+        "228",
+        "229",
+        "242",
+        "243",
+        "805",
+        "806"
+      ],
+      "reason": "Processes indicate collection of data from the compromised system."
+    },
+    {
+      "stage": "command_and_control",
+      "evidence_ids": [
+        "108",
+        "109",
+        "110",
+        "111",
+        "112",
+        "113",
+        "114",
+        "115",
+        "116",
+        "117",
+        "118",
+        "119",
+        "120",
+        "121",
+        "122",
+        "123",
+        "124",
+        "125",
+        "126",
+        "127",
+        "128",
+        "129",
+        "130",
+        "131"
+      ],
+      "reason": "Processes show communication with a command and control server."
+    },
+    {
+      "stage": "exfiltration",
+      "evidence_ids": [
+        "147",
+        "148",
+        "149",
+        "150",
+        "190",
+        "191",
+        "192",
+        "210",
+        "212",
+        "213",
+        "214",
+        "215",
+        "216",
+        "217",
+        "218",
+        "220"
+      ],
+      "reason": "Processes indicate data being sent out of the network."
+    },
+    {
+      "stage": "persistence",
+      "evidence_ids": [
+        "154",
+        "158",
+        "159",
+        "160",
+        "186",
+        "187",
+        "219",
+        "259",
+        "263",
+        "264",
+        "268",
+        "269",
+        "270",
+        "799",
+        "800",
+        "802",
+        "807",
+        "810"
+      ],
+      "reason": "Processes suggest methods used to maintain access to the compromised system."
+    },
+    {
+      "stage": "credential_access",
+      "evidence_ids": [
+        "155",
+        "162",
+        "163",
+        "164",
+        "165",
+        "166",
+        "167"
+      ],
+      "reason": "Processes indicate attempts to access or steal credentials."
+    },
+    {
+      "stage": "defense_evasion",
+      "evidence_ids": [
+        "273",
+        "274",
+        "275",
+        "276",
+        "277",
+        "278",
+        "279",
+        "280",
+        "281",
+        "282",
+        "283"
+      ],
+      "reason": "Processes suggest actions taken to avoid detection by security measures."
+    },
+    {
+      "stage": "impact",
+      "evidence_ids": [
+        "286",
+        "288",
+        "328",
+        "329"
+      ],
+      "reason": "Processes indicate actions that have a detrimental effect on the system."
+    }
+  ],
+  "uncertain": [],
+  "analyst_summary": "The attack began with execution of malicious code, followed by discovery and collection of system information. The attacker established command and control, exfiltrated data, and implemented persistence mechanisms while accessing credentials and evading defenses, ultimately leading to an impact on the system."
+}

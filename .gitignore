@@ -1,0 +1,19 @@
+# Ignore environment files containing secrets
+*.env
+
+# Python caches
+__pycache__/
+*.py[cod]
+
+# Distribution / packaging
+*.egg-info/
+*.dist-info/
+build/
+dist/
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db

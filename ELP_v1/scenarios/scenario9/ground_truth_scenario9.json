@@ -1,0 +1,627 @@
+﻿{
+    "schema_version":  "2.0",
+    "scenario_name":  "byovd_kernel_artifact_manipulation_attack",
+    "records":  [
+                    {
+                        "stage_id":  1,
+                        "stage_name":  "authorized_logon",
+                        "action_type":  "user_logon",
+                        "description":  "공격 수행 전 정상 사용자 세션 생성",
+                        "attack":  false,
+                        "stage_start_time":  "2026-05-29T19:30:10.6534951+09:00",
+                        "stage_end_time":  "2026-05-29T19:30:20.6848155+09:00",
+                        "artifact_paths":  [
+                                               "정상 사용자 세션 생성"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+
+                                                              ],
+                                                   "security":  [
+
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4624
+                                                                ],
+                                                   "sysmon":  [
+
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Security EID 4624: Logon",
+                        "notes":  "공격 시작 이전 정상 로그인 세션 생성 단계"
+                    },
+                    {
+                        "stage_id":  2,
+                        "stage_name":  "privilege_validation",
+                        "action_type":  "privilege_validation",
+                        "description":  "현재 사용자 계정이 관리자 권한 및 특권을 보유하는지 확인",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-29T19:30:27.5133798+09:00",
+                        "stage_end_time":  "2026-05-29T19:30:38.6847526+09:00",
+                        "artifact_paths":  [
+                                               "whoami /priv 실행 흔적",
+                                               "whoami /groups 실행 흔적"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  1
+                                                              ],
+                                                   "security":  [
+                                                                    4688
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688
+                                                                ],
+                                                   "sysmon":  [
+                                                                  1
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Security EID 4688 / Sysmon EID 1: whoami.exe privilege enumeration",
+                        "notes":  "driver load 이전 현재 권한 상태 확인 단계"
+                    },
+                    {
+                        "stage_id":  3,
+                        "stage_name":  "security_product_discovery",
+                        "action_type":  "security_software_discovery",
+                        "description":  "보안 제품 및 Defender 동작 여부 확인",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-29T19:30:44.6217388+09:00",
+                        "stage_end_time":  "2026-05-29T19:30:57.8248789+09:00",
+                        "artifact_paths":  [
+                                               "sc query WinDefend",
+                                               "sc query Sense",
+                                               "Get-MpComputerStatus"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  1
+                                                              ],
+                                                   "security":  [
+                                                                    4688
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688
+                                                                ],
+                                                   "sysmon":  [
+                                                                  1
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Security EID 4688 / Sysmon EID 1: sc.exe WinDefend/Sense + powershell.exe Get-MpComputerStatus",
+                        "notes":  "BYOVD 수행 전 security product 존재 여부 확인 단계"
+                    },
+                    {
+                        "stage_id":  4,
+                        "stage_name":  "driver_staging",
+                        "action_type":  "driver_staging",
+                        "description":  "취약 드라이버 및 보조 도구를 디스크에 배치",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-29T19:31:02.9342006+09:00",
+                        "stage_end_time":  "2026-05-29T19:31:12.3560712+09:00",
+                        "artifact_paths":  [
+                                               "C:\\ProgramData\\WinDrv",
+                                               "C:\\ProgramData\\WinDrv\\RTCore64.sys",
+                                               "C:\\ProgramData\\WinDrv\\drvloader.exe",
+                                               "C:\\ProgramData\\WinDrv\\memctl.exe"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  1,
+                                                                  11
+                                                              ],
+                                                   "security":  [
+                                                                    4688
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688
+                                                                ],
+                                                   "sysmon":  [
+                                                                  1,
+                                                                  11
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Sysmon EID 11: FileCreate RTCore64.sys / drvloader.exe / memctl.exe",
+                        "notes":  "취약 driver 및 helper tool staging 단계"
+                    },
+                    {
+                        "stage_id":  5,
+                        "stage_name":  "kernel_service_creation",
+                        "action_type":  "kernel_service_creation",
+                        "description":  "드라이버 로드를 위해 커널 서비스 등록",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-29T19:31:21.8408352+09:00",
+                        "stage_end_time":  "2026-05-29T19:31:30.9501027+09:00",
+                        "artifact_paths":  [
+                                               "HKLM\\SYSTEM\\CurrentControlSet\\Services\\WinDrv"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  1
+                                                              ],
+                                                   "security":  [
+                                                                    4688,
+                                                                    4697
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688,
+                                                                    4697
+                                                                ],
+                                                   "sysmon":  [
+                                                                  1
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Security EID 4697: WinDrv Service Installed (type=kernel) / EID 4688: sc.exe",
+                        "notes":  "취약 Driver를 Windows Kernel Service로 등록. Registry의 Services 영역에 Driver Service Artifact 생성."
+                    },
+                    {
+                        "stage_id":  6,
+                        "stage_name":  "driver_load",
+                        "action_type":  "driver_load",
+                        "description":  "등록된 취약 드라이버를 로드하여 커널 수준 접근 확보",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-29T19:31:38.6997829+09:00",
+                        "stage_end_time":  "2026-05-29T19:31:48.8571561+09:00",
+                        "artifact_paths":  [
+                                               "C:\\ProgramData\\WinDrv\\RTCore64.sys"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  1,
+                                                                  6
+                                                              ],
+                                                   "security":  [
+                                                                    4688
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688
+                                                                ],
+                                                   "sysmon":  [
+                                                                  1,
+                                                                  6
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Sysmon EID 6: DriverLoaded RTCore64.sys (NtLoadDriver) / EID 1: sc.exe + drvloader.exe",
+                        "notes":  "취약 driver load 단계. 실제 exploit 없이 kernel capability artifact만 생성"
+                    },
+                    {
+                        "stage_id":  7,
+                        "stage_name":  "driver_validation",
+                        "action_type":  "driver_validation",
+                        "description":  "드라이버가 정상적으로 로드되었는지 상태 검증",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-29T19:31:59.6248732+09:00",
+                        "stage_end_time":  "2026-05-29T19:32:08.8095646+09:00",
+                        "artifact_paths":  [
+                                               "sc query WinDrv"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  1
+                                                              ],
+                                                   "security":  [
+                                                                    4688
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688
+                                                                ],
+                                                   "sysmon":  [
+                                                                  1
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Security EID 4688 / Sysmon EID 1: sc.exe query WinDrv",
+                        "notes":  "driver가 실제 로드되었는지 상태 확인 수행"
+                    },
+                    {
+                        "stage_id":  8,
+                        "stage_name":  "memory_tool_execution",
+                        "action_type":  "memory_tool_execution",
+                        "description":  "드라이버와 통신할 사용자 모드 도구 실행",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-29T19:32:17.5592373+09:00",
+                        "stage_end_time":  "2026-05-29T19:32:25.9991058+09:00",
+                        "artifact_paths":  [
+                                               "C:\\ProgramData\\WinDrv\\memctl.exe"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  1
+                                                              ],
+                                                   "security":  [
+                                                                    4688
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688
+                                                                ],
+                                                   "sysmon":  [
+                                                                  1
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Security EID 4688 / Sysmon EID 1: memctl.exe 실행 / MEMCTL.EXE Prefetch 생성",
+                        "notes":  "Driver와 상호작용하는 Helper Tool(memctl.exe)을 실행. 이후 LSASS 접근 및 Process Access 행위의 Source Process 역할 수행."
+                    },
+                    {
+                        "stage_id":  9,
+                        "stage_name":  "lsass_handle_access",
+                        "action_type":  "lsass_memory_access",
+                        "description":  "LSASS 프로세스에 대한 메모리 접근 권한 획득 시도",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-29T19:32:33.5246485+09:00",
+                        "stage_end_time":  "2026-05-29T19:32:45.9970472+09:00",
+                        "artifact_paths":  [
+                                               "lsass.exe PROCESS_VM_READ|PROCESS_QUERY_INFORMATION|ACCESS_SYSTEM_SECURITY"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  10
+                                                              ],
+                                                   "security":  [
+                                                                    4656
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4656
+                                                                ],
+                                                   "sysmon":  [
+                                                                  10
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Sysmon EID 10: ProcessAccess lsass.exe / Security EID 4656 (RunAsPPL=0 + ACCESS_SYSTEM_SECURITY 조건)",
+                        "notes":  "실제 credential dump 없이 LSASS handle access artifact만 생성. OpenProcess P/Invoke 특성상 source process는 powershell.exe로 기록됨 (memctl.exe 아님)"
+                    },
+                    {
+                        "stage_id":  10,
+                        "stage_name":  "credential_dump_simulation",
+                        "action_type":  "credential_collection",
+                        "description":  "LSASS 메모리 덤프를 모사하는 아티팩트 생성",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-29T19:32:52.8245533+09:00",
+                        "stage_end_time":  "2026-05-29T19:33:01.1070295+09:00",
+                        "artifact_paths":  [
+                                               "C:\\ProgramData\\WinDrv\\lsass_sim.dmp"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  1,
+                                                                  11
+                                                              ],
+                                                   "security":  [
+                                                                    4688
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688
+                                                                ],
+                                                   "sysmon":  [
+                                                                  1,
+                                                                  11
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Sysmon EID 11: FileCreate lsass_sim.dmp / EID 1: memctl.exe",
+                        "notes":  "실제 LSASS dump 없이 forensic용 dump artifact만 생성"
+                    },
+                    {
+                        "stage_id":  11,
+                        "stage_name":  "suspicious_memory_activity",
+                        "action_type":  "process_injection_simulation",
+                        "description":  "svchost 프로세스 대상 메모리 조작 행위 시뮬레이션",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-29T19:33:08.7630365+09:00",
+                        "stage_end_time":  "2026-05-29T19:33:18.8246465+09:00",
+                        "artifact_paths":  [
+                                               "svchost.exe PROCESS_ALL_ACCESS (0x1F0FFF)"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  10
+                                                              ],
+                                                   "security":  [
+
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+
+                                                                ],
+                                                   "sysmon":  [
+                                                                  10
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Sysmon EID 10: ProcessAccess svchost.exe PROCESS_ALL_ACCESS",
+                        "notes":  "실제 shellcode injection 없이 ProcessAccess 기반 injection simulation artifact 생성"
+                    },
+                    {
+                        "stage_id":  12,
+                        "stage_name":  "rootkit_behavior",
+                        "action_type":  "rootkit_behavior",
+                        "description":  "Rootkit과 유사한 비정상 프로세스 계층 및 커널 흔적 생성",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-29T19:33:25.7645620+09:00",
+                        "stage_end_time":  "2026-05-29T19:33:34.8417513+09:00",
+                        "artifact_paths":  [
+                                               "C:\\ProgramData\\WinDrv\\kern.tmp",
+                                               "drvloader.exe → cmd.exe 비정상 process tree"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  1,
+                                                                  11
+                                                              ],
+                                                   "security":  [
+                                                                    4688
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688
+                                                                ],
+                                                   "sysmon":  [
+                                                                  1,
+                                                                  11
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Sysmon EID 11: kern.tmp, drv_trace.log / Sysmon EID 1: drvloader→cmd 비정상 process lineage",
+                        "notes":  "실제 EPROCESS unlink 없이 rootkit-like abnormal process lineage simulation"
+                    },
+                    {
+                        "stage_id":  13,
+                        "stage_name":  "eventlog_cleanup_attempt",
+                        "action_type":  "eventlog_cleanup_attempt",
+                        "description":  "이벤트 로그 삭제를 시도하여 공격 흔적 은닉 시도",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-29T19:33:44.1216466+09:00",
+                        "stage_end_time":  "2026-05-29T19:34:05.6455849+09:00",
+                        "artifact_paths":  [
+                                               "wevtutil el",
+                                               "wevtutil gli Security",
+                                               "wevtutil cl (의도적 실패)"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  1
+                                                              ],
+                                                   "security":  [
+                                                                    4688
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688
+                                                                ],
+                                                   "sysmon":  [
+                                                                  1
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Security EID 4688 / Sysmon EID 1: wevtutil.exe eventlog cleanup 시도",
+                        "notes":  "실제 로그 삭제 대신 event log cleanup 시도 artifact만 생성"
+                    },
+                    {
+                        "stage_id":  14,
+                        "stage_name":  "driver_unload_attempt",
+                        "action_type":  "driver_unload_attempt",
+                        "description":  "드라이버 서비스 중지 및 커널 흔적 제거 시도",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-29T19:34:28.0338789+09:00",
+                        "stage_end_time":  "2026-05-29T19:34:38.2466355+09:00",
+                        "artifact_paths":  [
+                                               "sc stop WinDrv",
+                                               "sc delete WinDrv"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  1
+                                                              ],
+                                                   "security":  [
+                                                                    4688
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688
+                                                                ],
+                                                   "sysmon":  [
+                                                                  1
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Security EID 4688 / Sysmon EID 1: sc.exe stop + delete WinDrv",
+                        "notes":  "공격 종료 전 Driver Service를 중지하여 Persistence 흔적 제거를 시도. 완전한 제거가 아닌 부분 제거를 가정."
+                    },
+                    {
+                        "stage_id":  15,
+                        "stage_name":  "registry_cleanup_attempt",
+                        "action_type":  "registry_cleanup_attempt",
+                        "description":  "서비스 레지스트리 키 삭제 시도",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-29T19:34:45.4656208+09:00",
+                        "stage_end_time":  "2026-05-29T19:34:54.6374947+09:00",
+                        "artifact_paths":  [
+                                               "reg delete HKLM\\SYSTEM\\CurrentControlSet\\Services\\WinDrv"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  1
+                                                              ],
+                                                   "security":  [
+                                                                    4688
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688
+                                                                ],
+                                                   "sysmon":  [
+                                                                  1
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Security EID 4688 / Sysmon EID 1: reg.exe delete Services\\WinDrv",
+                        "notes":  "서비스 registry artifact 제거 시도 단계"
+                    },
+                    {
+                        "stage_id":  16,
+                        "stage_name":  "kernel_artifact_cleanup",
+                        "action_type":  "artifact_cleanup",
+                        "description":  "일부 파일 아티팩트 삭제를 통한 흔적 제거 시도",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-29T19:35:00.5096045+09:00",
+                        "stage_end_time":  "2026-05-29T19:35:08.5746833+09:00",
+                        "artifact_paths":  [
+                                               "C:\\ProgramData\\WinDrv\\kern.tmp (삭제)",
+                                               "C:\\ProgramData\\WinDrv\\drvloader.exe (삭제)",
+                                               "C:\\ProgramData\\WinDrv\\lsass_sim.dmp (삭제)",
+                                               "C:\\ProgramData\\WinDrv\\RTCore64.sys (잔존)",
+                                               "C:\\ProgramData\\WinDrv\\memctl.exe (잔존)"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  26
+                                                              ],
+                                                   "security":  [
+
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+
+                                                                ],
+                                                   "sysmon":  [
+                                                                  26
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Sysmon EID 26: FileDeleteDetected kern.tmp / drvloader.exe / lsass_sim.dmp",
+                        "notes":  "일부 artifact만 삭제하여 incomplete cleanup 재현"
+                    },
+                    {
+                        "stage_id":  17,
+                        "stage_name":  "residual_artifact_state",
+                        "action_type":  "residual_artifact_state",
+                        "description":  "제거 실패로 인해 주요 커널 및 메모리 흔적이 잔존한 상태 확인",
+                        "attack":  false,
+                        "stage_start_time":  "2026-05-29T19:36:39.8250172+09:00",
+                        "stage_end_time":  "2026-05-29T19:36:48.0283559+09:00",
+                        "artifact_paths":  [
+                                               "C:\\ProgramData\\WinDrv\\RTCore64.sys",
+                                               "C:\\ProgramData\\WinDrv\\memctl.exe",
+                                               "Prefetch 잔존",
+                                               "DriverLoad 기록 잔존"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+
+                                                              ],
+                                                   "security":  [
+
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+
+                                                                ],
+                                                   "sysmon":  [
+
+                                                              ]
+                                               },
+                        "primary_log_signal":  "잔존 artifact 상태 기록 완료 (DFIR 분석 가능 상태 유지)",
+                        "notes":  "cleanup 이후에도 residual kernel 및 memory artifact가 남아 DFIR 분석 가능 상태 유지"
+                    },
+                    {
+                        "stage_id":  18,
+                        "stage_name":  "session_termination",
+                        "action_type":  "session_logoff",
+                        "description":  "공격 종료 후 사용자 세션 로그오프",
+                        "attack":  false,
+                        "stage_start_time":  "2026-05-29T19:36:51.9028568+09:00",
+                        "stage_end_time":  "2026-05-29T19:37:01.9342232+09:00",
+                        "artifact_paths":  [
+                                               "사용자 세션 종료"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+
+                                                              ],
+                                                   "security":  [
+
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4634
+                                                                ],
+                                                   "sysmon":  [
+
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Security EID 4634: Logoff",
+                        "notes":  "공격 종료 및 세션 종료 단계"
+                    }
+                ]
+}

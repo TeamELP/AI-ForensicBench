@@ -1,0 +1,391 @@
+﻿{
+  "scenario_id": "win_rdp_ransomware_no_sysmon13",
+  "scenario_name": "rdp_intrusion_ransomware_without_registry_sysmon",
+  "scenario_type": "scripted_intrusion",
+
+  "description": "외부 공격자가 RDP 브루트포스를 통해 시스템에 침투한 뒤 권한 확인 및 보안 우회 시도, 일부 실패 이후 랜섬웨어를 실행하여 파일을 부분 암호화하고 시스템 기능을 저하시킨 후 일부 흔적을 제거하고 세션을 종료하는 공격 시나리오",
+
+  "environment_context": {
+    "environment_type": "multi_host",
+    "hosts": [
+      { "role": "attacker", "os": "Windows 11" },
+      { "role": "victim", "os": "Windows Server 2022"}
+    ],
+    "logging_sources": [
+      "Windows Security Log",
+      "Sysmon Operational Log"
+    ],
+    "required_logging_configuration": {
+      "sysmon_events": [1, 3, 11, 26],
+      "security_events": [4624, 4625, 4634, 4647, 4656, 4663, 4672, 4688]
+    }
+  },
+
+  "artifacts_definition": {
+    "base_directory": "C:\\Temp\\RansomSim",
+    "target_file_dir": "C:\\Temp\\RansomSim\\TestFiles",
+    "ransomware_exe": "C:\\Temp\\RansomSim\\ransomware.exe",
+    "mbr_script": "C:\\Temp\\RansomSim\\mbr_script.txt",
+    "ransom_note": "C:\\Users\\Public\\README_DECRYPT.txt",
+    "encrypted_ext": ".locked"
+  },
+
+  "scenario_flow": [
+
+    {
+      "stage_id": 1,
+      "stage_name": "rdp_bruteforce_initial_access",
+      "description": "RDP 브루트포스를 통한 초기 침투",
+      "action_type": "network_connection",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Initial Access",
+        "technique_id": "T1110",
+        "technique_name": "Brute Force"
+      },
+      "expected_logs": {
+        "security": [4625, 4624],
+        "sysmon": [3]
+      },
+      "expected_artifacts": [
+        "EID 4625 다수 (브루트포스 로그인 실패)",
+        "EID 4624 (로그인 성공)",
+        "Sysmon 3 (공격자 IP 네트워크 연결)"
+      ],
+      "notes": "RDP 브루트포스를 통한 초기 침투"
+    },
+
+    {
+      "stage_id": 2,
+      "stage_name": "privileged_session_established",
+      "description": "특수 권한 세션 확립",
+      "action_type": "session_token",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Initial Access",
+        "technique_id": "T1078",
+        "technique_name": "Valid Accounts"
+      },
+      "expected_logs": {
+        "security": [4672],
+        "sysmon": []
+      },
+      "expected_artifacts": [
+        "EID 4672 (특수 권한 할당)",
+        "관리자 권한 세션 토큰"
+      ],
+      "notes": "EID 4672는 Stage 1의 EID 4624와 동일 logon 이벤트의 연속 페어. 프로세스 생성 없음, 세션 토큰 이벤트"
+    },
+
+    {
+      "stage_id": 3,
+      "stage_name": "privilege_enumeration",
+      "description": "권한 열거 (whoami /groups, Get-LocalGroupMember)",
+      "action_type": "process_start",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Discovery",
+        "technique_id": "T1069",
+        "technique_name": "Permission Groups Discovery"
+      },
+      "expected_logs": {
+        "security": [4688],
+        "sysmon": [1]
+      },
+      "expected_artifacts": [
+        "powershell.exe 프로세스 생성",
+        "whoami.exe 프로세스 생성",
+        "권한 열거 결과 (Administrators 그룹 확인)"
+      ],
+      "notes": "RDP 세션 후 explorer.exe가 셸 앵커. 공격자가 PowerShell을 열어 권한 확인"
+    },
+
+    {
+      "stage_id": 4,
+      "stage_name": "initial_cleanup_attempt",
+      "description": "Security.evtx 핸들 직접 획득 시도 실패 (Event Log 서비스 독점 잠금)",
+      "action_type": "file_access",
+      "attack": true,
+
+      "mitre_mapping": {
+        "tactic": "Defense Evasion",
+        "technique_id": "T1070",
+        "technique_name": "Indicator Removal on Host"
+      },
+
+      "expected_logs": {
+        "security": [4656, 4688],
+        "sysmon": [1]
+      },
+      "expected_artifacts": [
+        "Security.evtx ReadWrite + FileShare.None 핸들 획득 시도",
+        "Event Log 서비스 독점 잠금으로 접근 거부",
+        "EID 4625 브루트포스 흔적 잔존"
+      ],
+
+      "notes": "PowerShell에서 Security.evtx에 ReadWrite 핸들 획득 시도. Event Log 서비스 독점 잠금으로 실패하며, 브루트포스 흔적(EID 4625)은 잔존"
+    },
+
+    {
+      "stage_id": 5,
+      "stage_name": "defender_disable_attempt_fail",
+      "description": "Defender 비활성화 시도 실패 (Tamper Protection)",
+      "action_type": "command_execution",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Defense Evasion",
+        "technique_id": "T1562.001",
+        "technique_name": "Impair Defenses"
+      },
+      "expected_logs": {
+        "security": [4688, 4656],
+        "sysmon": [1]
+      },
+      "expected_artifacts": [
+        "Set-MpPreference 실행 시도",
+        "Tamper Protection으로 인한 변경 실패"
+      ],
+      "notes": "Set-MpPreference는 powershell.exe 인-프로세스 실행. 실패 원인: Tamper Protection 활성화 상태"
+    },
+
+    {
+      "stage_id": 6,
+      "stage_name": "defender_disable_retry",
+      "description": "Defender 비활성화 재시도 성공",
+      "action_type": "command_execution",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Defense Evasion",
+        "technique_id": "T1562.001",
+        "technique_name": "Impair Defenses"
+      },
+      "expected_logs": {
+        "security": [4688, 4663],
+        "sysmon": [1]
+      },
+      "expected_artifacts": [
+        "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender 레지스트리 수정",
+        "DisableAntiSpyware, DisableRealtimeMonitoring 값 설정"
+      ],
+      "notes": "Stage 5 실패 후 레지스트리 직접 수정으로 재시도 성공"
+    },
+
+    {
+      "stage_id": 7,
+      "stage_name": "payload_transfer",
+      "description": "ransomware.exe 다운로드 (Invoke-WebRequest)",
+      "action_type": "network_connection",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Command and Control",
+        "technique_id": "T1105",
+        "technique_name": "Ingress Tool Transfer"
+      },
+      "expected_logs": {
+        "security": [4663],
+        "sysmon": [3, 11]
+      },
+      "expected_artifacts": [
+        "C:\\Temp\\RansomSim\\ransomware.exe 파일 생성",
+        "nslookup DNS 쿼리",
+        "Sysmon 11 FileCreate (ransomware.exe)"
+      ],
+      "notes": "nslookup DNS 쿼리(Sysmon 3)와 ransomware.exe 파일 생성(Sysmon 11, EID 4663). ransomware.exe가 Stage 8→9 아티팩트 브리지"
+    },
+
+    {
+      "stage_id": 8,
+      "stage_name": "payload_execution_fail",
+      "description": "ransomware.exe 실행 실패",
+      "action_type": "process_start",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Execution",
+        "technique_id": "T1204",
+        "technique_name": "User Execution"
+      },
+      "expected_logs": {
+        "security": [4688, 4656],
+        "sysmon": [1]
+      },
+      "expected_artifacts": [
+        "ransomware.exe 실행 시도 흔적",
+        "프로세스 생성 실패"
+      ],
+      "notes": "실행 실패로 인한 공격 지연. EID 4688 + EID 4656으로 실행 시도 흔적 확인 가능"
+    },
+
+    {
+      "stage_id": 9,
+      "stage_name": "payload_execution_success",
+      "description": "ransomware.exe 실행 성공",
+      "action_type": "process_start",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Execution",
+        "technique_id": "T1204",
+        "technique_name": "User Execution"
+      },
+      "expected_logs": {
+        "security": [4688],
+        "sysmon": [1]
+      },
+      "expected_artifacts": [
+        "ransomware.exe 프로세스 생성"
+      ],
+      "notes": "ransomware.exe 프로세스 생성. Sysmon 1의 PPID=PID_P로 Stage 8→9→10 체인 연속 추적 가능"
+    },
+
+    {
+      "stage_id": 10,
+      "stage_name": "file_encryption_partial",
+      "description": "테스트 파일 부분 암호화 (.locked 확장자)",
+      "action_type": "file_create",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Impact",
+        "technique_id": "T1486",
+        "technique_name": "Data Encrypted for Impact"
+      },
+      "expected_logs": {
+        "security": [4663],
+        "sysmon": [11]
+      },
+      "expected_artifacts": [
+        "testfile1~5.locked 파일 생성 (C:\\Temp\\RansomSim\\TestFiles\\)",
+        "원본 .txt 파일 잔존",
+        "Sysmon 11 FileCreate (.locked 파일)"
+      ],
+      "notes": "ransomware.exe 인-프로세스 파일 I/O"
+    },
+
+    {
+      "stage_id": 11,
+      "stage_name": "mbr_modification_attempt_fail",
+      "description": "MBR 수정 시도 실패 (diskpart)",
+      "action_type": "process_start",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Impact",
+        "technique_id": "T1490",
+        "technique_name": "Inhibit System Recovery"
+      },
+      "expected_logs": {
+        "security": [4656],
+        "sysmon": [1]
+      },
+      "expected_artifacts": [
+        "C:\\Temp\\RansomSim\\mbr_script.txt 생성",
+        "diskpart.exe 프로세스 생성",
+        "PhysicalDrive0 접근 거부 (EID 4656)"
+      ],
+      "notes": "MBR 접근 실패로 시스템 복구 방해 목적 미달성"
+    },
+
+    {
+      "stage_id": 12,
+      "stage_name": "ransom_note_creation",
+      "description": "랜섬 노트 생성 (README_DECRYPT.txt)",
+      "action_type": "file_create",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Impact",
+        "technique_id": "T1486",
+        "technique_name": "Data Encrypted for Impact"
+      },
+      "expected_logs": {
+        "security": [4663],
+        "sysmon": [11]
+      },
+      "expected_artifacts": [
+        "C:\\Users\\Public\\README_DECRYPT.txt 생성",
+        "Sysmon 11 FileCreate (README_DECRYPT.txt)"
+      ],
+      "notes": "ransomware.exe 인-프로세스 파일 생성. 랜섬 노트는 삭제 대상 제외 — 공격 증거로 잔존"
+    },
+
+    {
+      "stage_id": 13,
+      "stage_name": "service_disruption",
+      "description": "서비스 중지 (sc.exe stop)",
+      "action_type": "process_start",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Impact",
+        "technique_id": "T1489",
+        "technique_name": "Service Stop"
+      },
+      "expected_logs": {
+        "security": [4688],
+        "sysmon": [1]
+      },
+      "expected_artifacts": [
+        "sc.exe 프로세스 생성"
+      ],
+      "notes": "sc.exe 프로세스 생성"
+    },
+
+    {
+      "stage_id": 14,
+      "stage_name": "final_cleanup_partial",
+      "description": "payload 파일 삭제 (ransomware.exe, mbr_script.txt)",
+      "action_type": "file_delete",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Defense Evasion",
+        "technique_id": "T1070.004",
+        "technique_name": "File Deletion"
+      },
+      "expected_logs": {
+        "security": [4656, 4663],
+        "sysmon": [26]
+      },
+      "expected_artifacts": [
+        "ransomware.exe 삭제",
+        "mbr_script.txt 삭제",
+        "README_DECRYPT.txt 의도적 잔존"
+      ],
+      "notes": "ransomware.exe, mbr_script.txt 삭제. 랜섬 노트는 의도적으로 잔존. Sysmon 26으로 삭제된 파일 경로 복원 가능"
+    },
+
+    {
+      "stage_id": 15,
+      "stage_name": "session_termination",
+      "description": "RDP 세션 종료",
+      "action_type": "process_exit",
+      "attack": false,
+      "mitre_mapping": null,
+      "expected_logs": {
+        "security": [4634, 4647],
+        "sysmon": []
+      },
+      "expected_artifacts": [
+        "EID 4634 (세션 종료)",
+        "README_DECRYPT.txt 잔존"
+      ],
+      "notes": "공격 종료"
+    }
+
+  ],
+
+  "automation_notes": {
+    "execution_principle": "RDP 세션 기반 원격 침투 후 랜섬웨어 실행 및 흔적 제거",
+    "design_goal": "멀티호스트 RDP 침투 → 랜섬웨어 체인 로그 생성 및 LLM 평가",
+    "safe_but_real_actions": [
+      "RDP 브루트포스 시뮬레이션 (실패 로그온 반복 후 성공)",
+      "PowerShell Defender 설정 변경",
+      "Invoke-WebRequest 파일 다운로드",
+      "테스트 파일 암호화 (비시스템 경로 한정)",
+      "서비스 시작/중지",
+      "파일 삭제"
+    ],
+    "pre_execution_requirements": [
+      "공격자 VM (Windows 11) 및 피해자 VM (Windows Server 2022) 구성",
+      "피해자 VM RDP 활성화 및 포트 3389 개방",
+      "Sysmon 설치 및 설정 (피해자 VM)",
+      "Audit Policy 활성화 (피해자 VM)",
+      "PowerShell ScriptBlock Logging 활성화 (피해자 VM)",
+      "테스트용 더미 ransomware.exe 준비 (notepad.exe 복사본)"
+    ]
+  }
+}

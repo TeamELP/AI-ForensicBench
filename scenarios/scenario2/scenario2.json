@@ -1,0 +1,385 @@
+﻿{
+  "scenario_id": "win11_wireless_intrusion_level3_structured",
+  "scenario_name": "multi_stage_wireless_sniffing_intrusion",
+  "scenario_type": "scripted_intrusion",
+
+  "description": "무선 네트워크 감청을 통해 자격 증명을 확보하고, 원격 로그인 및 계정 생성을 수행한 뒤 일부 흔적을 삭제하는 18단계 Level 3 침투 시나리오",
+
+  "environment_context": {
+    "environment_type": "single_windows_host",
+    "os": ["Windows 11"],
+    "logging_sources": [
+      "Windows Security Log",
+      "Sysmon Operational Log"
+    ],
+    "required_logging_configuration": {
+      "sysmon_events": [1, 3, 11, 26],
+      "security_events": [4624, 4625, 4663, 4688, 4720, 4732]
+    }
+  },
+
+  "artifacts_definition": {
+    "base_directory": "C:\\ProgramData\\Microsoft\\DiagTrack\\{8F3A1}",
+    "sniffer_path": "C:\\ProgramData\\Microsoft\\DiagTrack\\diaghost.exe",
+    "pcap_file_1": "C:\\ProgramData\\System\\Logs\\cacheA.dat",
+    "pcap_file_2": "C:\\ProgramData\\System\\Logs\\sys_idx.bin",
+    "analysis_output": "C:\\ProgramData\\Microsoft\\Cache\\diet.log",
+    "credential_output": "C:\\ProgramData\\Windows\\Temp\\user.dat",
+    "temp_cleanup_targets": [
+      "C:\\ProgramData\\System\\Logs\\cacheA.dat",
+      "C:\\ProgramData\\Microsoft\\Cache\\diet.log"
+    ]
+  },
+
+  "scenario_flow": [
+
+    {
+      "stage_id": 1,
+      "stage_name": "authorized_logon",
+      "description": "사용자가 정상 로그인하여 세션 시작",
+      "action_type": "user_logon",
+      "attack": false,
+      "mitre_mapping": null,
+      "expected_logs": {
+        "security": [4624],
+        "sysmon": []
+      },
+      "expected_artifacts": ["정상 사용자 세션 생성"],
+      "notes": "공격 아님"
+    },
+
+    {
+      "stage_id": 2,
+      "stage_name": "system_recon",
+      "description": "systeminfo 및 hostname 실행",
+      "action_type": "system_recon",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Discovery",
+        "technique_id": "T1082",
+        "technique_name": "System Information Discovery"
+      },
+      "expected_logs": {
+        "security": [4688],
+        "sysmon": [1]
+      },
+      "expected_artifacts": ["systeminfo.exe 실행 흔적"],
+      "notes": "초기 정찰"
+    },
+
+    {
+      "stage_id": 3,
+      "stage_name": "network_configuration_discovery",
+      "description": "ipconfig 및 netstat 실행",
+      "action_type": "network_recon",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Discovery",
+        "technique_id": "T1016",
+        "technique_name": "System Network Configuration Discovery"
+      },
+      "expected_logs": {
+        "security": [4688],
+        "sysmon": [1]
+      },
+      "expected_artifacts": ["네트워크 연결 정보 출력"],
+      "notes": "네트워크 상태 확인"
+    },
+
+    {
+      "stage_id": 4,
+      "stage_name": "initial_rdp_login_attempt",
+      "description": "임의 자격 증명으로 RDP 로그인 시도 (실패)",
+      "action_type": "remote_login_attempt",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Credential Access",
+        "technique_id": "T1552",
+        "technique_name": "Unsecured Credentials"
+      },
+      "expected_logs": {
+        "security": [4625],
+        "sysmon": [1, 3]
+      },
+      "expected_artifacts": ["로그인 실패 이벤트"],
+      "notes": "자격 증명 확보 전 무작위 시도"
+    },
+
+    {
+      "stage_id": 5,
+      "stage_name": "sniffing_tool_execution",
+      "description": "tshark.exe 실행",
+      "action_type": "tool_execution",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Collection",
+        "technique_id": "T1040",
+        "technique_name": "Network Sniffing"
+      },
+      "expected_logs": {
+        "security": [4688],
+        "sysmon": [1]
+      },
+      "expected_artifacts": ["tshark.exe 실행"],
+      "notes": "패킷 감청 시작"
+    },
+
+    {
+      "stage_id": 6,
+      "stage_name": "packet_capture_phase_1",
+      "description": "capture1.pcap 생성",
+      "action_type": "packet_capture",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Collection",
+        "technique_id": "T1040",
+        "technique_name": "Network Sniffing"
+      },
+      "expected_logs": {
+        "security": [4663],
+        "sysmon": [11]
+      },
+      "expected_artifacts": ["cacheA.dat 생성"],
+      "notes": "초기 네트워크 패킷 수집을 통해 자격 증명 확보 준비"
+    },
+
+    {
+      "stage_id": 7,
+      "stage_name": "pcap_analysis",
+      "description": "pcap 분석 후 analysis.txt 생성",
+      "action_type": "analysis",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Credential Access",
+        "technique_id": "T1552",
+        "technique_name": "Unsecured Credentials"
+      },
+      "expected_logs": {
+        "security": [4663],
+        "sysmon": [11]
+      },
+      "expected_artifacts": ["diet.log 생성"],
+      "notes": "수집된 패킷 분석을 통해 인증 정보 추출 가능성 탐색"
+    },
+
+    {
+      "stage_id": 8,
+      "stage_name": "credential_extraction_phase_1",
+      "description": "HTTP 인증 문자열 검색",
+      "action_type": "credential_search",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Credential Access",
+        "technique_id": "T1552"
+      },
+      "expected_logs": {
+        "security": [4663],
+        "sysmon": []
+      },
+      "expected_artifacts": ["creds.txt 일부 생성"],
+      "notes": "HTTP 인증 정보 등 평문 자격 증명 추출 시도"
+    },
+
+    {
+      "stage_id": 9,
+      "stage_name": "packet_capture_phase_2",
+      "description": "추가 감청 및 capture2.pcap 생성",
+      "action_type": "packet_capture",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Collection",
+        "technique_id": "T1040"
+      },
+      "expected_logs": {
+        "security": [4663],
+        "sysmon": [11]
+      },
+      "expected_artifacts": ["sys_idx.bin 생성"],
+      "notes": "추가 트래픽 수집으로 자격 증명 확보 확률 증가"
+    },
+
+    {
+      "stage_id": 10,
+      "stage_name": "credential_extraction_phase_2",
+      "description": "추가 자격 증명 탐색",
+      "action_type": "credential_search",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Credential Access",
+        "technique_id": "T1552"
+      },
+      "expected_logs": {
+        "security": [4663],
+        "sysmon": []
+      },
+      "expected_artifacts": ["creds.txt 업데이트"],
+      "notes": "추가 자격 증명 확보 및 정확도 향상"
+    },
+
+    {
+      "stage_id": 11,
+      "stage_name": "rdp_login_retry_failed",
+      "description": "획득 자격 증명으로 로그인 재시도 (실패)",
+      "action_type": "remote_login_attempt",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Credential Access",
+        "technique_id": "T1552"
+      },
+      "expected_logs": {
+        "security": [4625],
+        "sysmon": [1, 3]
+      },
+      "expected_artifacts": ["추가 로그인 실패"],
+      "notes": "획득한 자격 증명 검증 단계 (유효성 확인 과정)"
+    },
+
+    {
+		  "stage_id": 12,
+		  "stage_name": "rdp_login_success",
+		  "description": "정확한 자격 증명으로 로그인 성공",
+		  "action_type": "remote_login_success",
+		  "attack": true,
+		  "mitre_mapping": {
+		    "tactic": "Initial Access",
+		    "technique_id": "T1078",
+		    "technique_name": "Valid Accounts"
+		  },
+		  "expected_logs": {
+		    "security": [4624],
+		    "sysmon": [1, 3]
+		  },
+		  "expected_artifacts": ["로그인 성공 이벤트"],
+		  "notes": "유효한 자격 증명을 통한 실제 시스템 침입 성공"
+		 },
+
+    {
+      "stage_id": 13,
+      "stage_name": "local_account_creation",
+      "description": "지속성을 위한 관리자 계정 생성",
+      "action_type": "account_creation",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Persistence",
+        "technique_id": "T1136"
+      },
+      "expected_logs": {
+        "security": [4720, 4732],
+        "sysmon": [1]
+      },
+      "expected_artifacts": ["신규 로컬 계정 생성"],
+      "notes": "지속적 접근을 위한 백도어 계정 생성"
+    },
+
+    {
+      "stage_id": 14,
+      "stage_name": "privilege_check",
+      "description": "관리자 그룹 확인",
+      "action_type": "privilege_enumeration",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Discovery",
+        "technique_id": "T1082"
+      },
+      "expected_logs": {
+        "security": [4688],
+        "sysmon": [1]
+      },
+      "expected_artifacts": ["whoami 실행"],
+      "notes": "현재 계정 권한 및 관리자 여부 확인"
+    },
+
+    {
+      "stage_id": 15,
+      "stage_name": "temporary_cleanup_1",
+      "description": "capture1.pcap 삭제",
+      "action_type": "file_deletion",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Defense Evasion",
+        "technique_id": "T1070.004"
+      },
+      "expected_logs": {
+        "security": [4663],
+        "sysmon": [26]
+      },
+      "expected_artifacts": ["capture1.pcap 삭제"],
+      "notes": "초기 감청 데이터 제거로 탐지 가능성 감소"
+    },
+
+    {
+      "stage_id": 16,
+      "stage_name": "temporary_cleanup_2",
+      "description": "analysis.txt 삭제",
+      "action_type": "file_deletion",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Defense Evasion",
+        "technique_id": "T1070.004"
+      },
+      "expected_logs": {
+        "security": [4663],
+        "sysmon": [26]
+      },
+      "expected_artifacts": ["diet.log 삭제"],
+      "notes": "분석 결과 파일 삭제를 통한 흔적 은폐"
+    },
+
+    {
+      "stage_id": 17,
+      "stage_name": "tool_removal_attempt",
+      "description": "tshark.exe 삭제 시도",
+      "action_type": "tool_cleanup",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Defense Evasion",
+        "technique_id": "T1070.004"
+      },
+      "expected_logs": {
+        "security": [4663, 4688],
+        "sysmon": [1]
+      },
+      "expected_artifacts": ["diaghost.exe 삭제 실패"],
+      "notes": "사용한 공격 도구 제거 시도 (완전 삭제 실패 가능)"
+    },
+
+    {
+      "stage_id": 18,
+      "stage_name": "session_termination",
+      "description": "공격 세션 종료",
+      "action_type": "process_exit",
+      "attack": false,
+      "mitre_mapping": null,
+      "expected_logs": {
+        "security": [4688],
+        "sysmon": [1]
+      },
+      "expected_artifacts": ["powershell 종료"],
+      "notes": "공격 종료 및 세션 정리"
+    }
+
+  ],
+
+  "automation_notes": [
+    "Record-GT is triggered only for attack actions",
+    "Noise activities are executed but not recorded in GT",
+    "Each stage must include a random sleep between 1~3 seconds",
+    "Stage overlap is partially allowed for Level 3 complexity",
+    "Failed actions must still trigger GT",
+    "Logs are collected after full scenario execution using time window",
+    "All artifacts must be created under base_directory"
+  ],
+
+  "pre_execution_requirements": [
+    "PowerShell must be executed as Administrator",
+    "Sysmon must be installed with config enabling Event IDs 1,3,5,11,23,26",
+    "Audit Policy: File System auditing must be enabled",
+    "SACL must be applied to base_directory for file access logging",
+    "tshark.exe must exist at defined path",
+    "Npcap or WinPcap must be installed",
+    "Remote Desktop must be enabled",
+    "Firewall must allow RDP (port 3389)",
+    "At least one active network interface must exist"
+  ]
+
+}

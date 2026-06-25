@@ -1,0 +1,371 @@
+{
+  "scenario_id": "win11_crypto_transaction_hijacking_v3",
+  "scenario_name": "crypto_wallet_transaction_hijacking_attack",
+  "scenario_type": "scripted_intrusion",
+
+  "description": "사용자의 암호화폐 거래 흐름을 실시간 감시하고 clipboard 내 BTC wallet address를 공격자 주소로 선택적으로 치환하여 송금을 가로채며, 유사 wallet address masquerading을 통해 사용자의 육안 검증을 우회하는 Cryptocurrency Transaction Hijacking 시나리오",
+
+  "environment_context": {
+    "environment_type": "single_windows_host",
+
+    "os": [
+      "Windows 11"
+    ],
+
+    "logging_sources": [
+      "Windows Security Log",
+      "Sysmon Operational Log"
+    ],
+
+    "required_logging_configuration": {
+      "security_events": [4624, 4634, 4656, 4663, 4688],
+
+      "sysmon_events": [1, 3, 11, 22, 26]
+    }
+  },
+
+  "artifacts_definition": {
+
+    "victim_wallet_address": "bc1qvictimwalletaddress9x8a7b6c5d4e3f",
+
+    "attacker_wallet_address": "bc1qvictimxwallet9x8a7fake7w6v5u4",
+
+    "wallet_monitor_script": "C:\\ProgramData\\WalletCache\\txmon.ps1",
+
+    "wallet_session_log": "C:\\ProgramData\\WalletCache\\wallet_session.log",
+
+    "clipboard_activity_log": "C:\\ProgramData\\WalletCache\\clipboard_activity.log",
+
+    "transaction_receipt": "C:\\Users\\victim\\Desktop\\wallet_transfer_receipt.txt",
+
+    "browser_targets": [
+      "chrome.exe",
+      "msedge.exe"
+    ],
+
+    "wallet_targets": [
+      "ledgerlive.exe",
+      "exodus.exe"
+    ],
+
+    "cleanup_targets": [
+      "C:\\ProgramData\\WalletCache\\clipboard_activity.log"
+    ]
+  },
+
+  "scenario_flow": [
+
+    {
+      "stage_id": 1,
+      "stage_name": "authorized_logon",
+      "description": "정상 사용자 로그인",
+      "action_type": "logon",
+      "attack": false,
+
+      "mitre_mapping": null,
+
+      "expected_logs": {
+        "security": [4624],
+        "sysmon": []
+      },
+
+      "notes": "정상 사용자 세션 생성"
+    },
+
+    {
+      "stage_id": 2,
+      "stage_name": "wallet_application_reconnaissance",
+      "description": "암호화폐 거래 관련 browser 및 wallet application 탐색",
+      "action_type": "process_discovery",
+      "attack": true,
+
+      "mitre_mapping": {
+        "tactic": "Discovery",
+        "technique_id": "T1057",
+        "technique_name": "Process Discovery"
+      },
+
+      "expected_logs": {
+        "security": [4688],
+        "sysmon": [1]
+      },
+
+      "process_chain": {
+        "parent": "explorer.exe",
+        "child": "powershell.exe"
+      },
+
+      "notes": "chrome.exe, msedge.exe, ledgerlive.exe, exodus.exe 탐색"
+    },
+
+    {
+      "stage_id": 3,
+      "stage_name": "clipboard_monitor_deployment",
+      "description": "wallet transaction monitoring script 및 monitoring artifact 생성",
+      "action_type": "script_deployment",
+      "attack": true,
+
+      "mitre_mapping": {
+        "tactic": "Execution",
+        "technique_id": "T1059.001",
+        "technique_name": "PowerShell"
+      },
+
+      "expected_logs": {
+        "security": [4688],
+        "sysmon": [1, 11]
+      },
+
+      "expected_artifacts": [
+        "txmon.ps1 생성",
+        "clipboard_activity.log 생성",
+        "wallet_session.log 생성"
+      ],
+
+      "notes": "deployment powershell session을 통해 txmon.ps1 및 monitoring artifact 생성"
+    },
+
+    {
+      "stage_id": 4,
+      "stage_name": "clipboard_monitoring_session_start",
+      "description": "wallet/browser process 활성 상태 기반 background clipboard monitoring powershell session 실행",
+      "action_type": "clipboard_monitoring",
+      "attack": true,
+
+      "mitre_mapping": {
+        "tactic": "Collection",
+        "technique_id": "T1115",
+        "technique_name": "Clipboard Data"
+      },
+
+      "expected_logs": {
+        "security": [4688],
+        "sysmon": [1]
+      },
+
+      "notes": "새 monitoring powershell session이 txmon.ps1 실행 후 background clipboard polling 수행"
+    },
+
+    {
+		  "stage_id": 5,
+		  "stage_name": "wallet_transaction_interception_attempt",
+		  "description": "clipboard 내 BTC wallet address 탐지 후 C2 서버로 HTTP 전송 및 interception 준비",
+		  "action_type": "transaction_interception",
+		  "attack": true,
+		
+		  "mitre_mapping": {
+      "tactic": "Collection",
+      "technique_id": "T1115",
+      "technique_name": "Clipboard Data"
+    },
+		
+		  "expected_logs": {
+		    "security": [],
+		    "sysmon": [3, 22]
+		  },
+		
+		  "expected_artifacts": [
+		    "wallet transaction browser activity",
+		    "clipboard monitoring activity",
+		    "wallet address detection",
+		    "Invoke-WebRequest → C2 HTTP POST (185.220.101.45:80)",
+		    "clipboard_activity.log에 탐지 기록 append"
+		  ],
+		
+		  "notes": "기존 txmon.ps1 monitoring session 내부에서 BTC wallet address regex pattern 탐지 및 C2 HTTP POST 수행"
+		 },
+   
+	  {
+	  "stage_id": 6,
+	  "stage_name": "failed_wallet_replacement_attempt",
+	  "description": "첫 번째 clipboard wallet address replacement 시도 후 사용자가 address mismatch 인지하여 실패, clipboard_activity.log에 실패 기록 append",
+	  "action_type": "clipboard_manipulation_attempt",
+	  "attack": true,
+	
+	  "mitre_mapping": {
+	    "tactic": "Credential Access",
+	    "technique_id": "T1115",
+	    "technique_name": "Clipboard Data"
+	  },
+	
+	  "expected_logs": {
+	    "security": [4656, 4663],
+	    "sysmon": []
+	  },
+	
+	  "expected_artifacts": [
+	    "clipboard_activity.log append (실패 timestamp + mismatch 사유)",
+	    "failed replacement timestamp 기록",
+	    "validation mismatch 흔적"
+	  ],
+	
+	  "notes": "Object Access auditing 활성 환경에서는 clipboard_activity.log append 과정에서 Security Event 4656/4663 발생 가능"
+	},
+	
+  {
+    "stage_id": 7,
+    "stage_name": "failed_interception_artifact_cleanup",
+    "description": "첫 번째 transaction interception 실패 이후 clipboard monitoring 흔적 삭제 시도",
+    "action_type": "file_deletion",
+    "attack": true,
+
+    "mitre_mapping": {
+      "tactic": "Defense Evasion",
+      "technique_id": "T1070.004",
+      "technique_name": "File Deletion"
+    },
+
+    "expected_logs": {
+      "security": [4688],
+      "sysmon": [26]
+
+    },
+
+    "expected_artifacts": [
+      "clipboard_activity.log 삭제",
+      "Sysmon Event 26 삭제 기록",
+      "삭제 이후 monitoring process 지속 실행"
+    ],
+
+    "notes": "첫 번째 replacement 실패 이후 공격 흔적 제거를 위해 clipboard_activity.log 삭제 수행. txmon.ps1 monitoring process 자체는 종료되지 않으며 background clipboard polling은 계속 유지됨"
+  },
+
+  {
+    "stage_id": 8,
+    "stage_name": "wallet_similarity_validation_bypass",
+    "description": "유사 wallet address 기반 clipboard replacement 재수행 및 monitoring artifact 재생성",
+    "action_type": "transaction_deception",
+    "attack": true,
+
+    "mitre_mapping": {
+      "tactic": "Defense Evasion",
+      "technique_id": "T1036",
+      "technique_name": "Masquerading"
+    },
+
+    "expected_logs": {
+      "security": [4656, 4663],
+      "sysmon": [11]
+    },
+    
+    "expected_artifacts": [
+      "새 clipboard_activity.log 재생성",
+      "validation_cache.tmp 생성 가능",
+      "유사 attacker wallet address 기록",
+      "두 번째 clipboard replacement activity"
+    ],
+
+    "notes": "기존 txmon.ps1 monitoring session은 계속 실행 중이며 삭제된 clipboard_activity.log를 재생성한다. 이후 victim wallet address와 유사한 attacker wallet address를 사용하여 clipboard replacement를 재수행한다. validation cache 및 replacement 기록은 local artifact에 저장되며 Object Access auditing 활성 환경에서는 Security Event 4663 발생 가능"
+  },
+
+
+    {
+      "stage_id": 9,
+      "stage_name": "fraudulent_transaction_execution",
+      "description": "공격자 wallet address 기반 거래 수행",
+      "action_type": "financial_transaction_manipulation",
+      "attack": true,
+
+      "mitre_mapping": {
+        "tactic": "Impact",
+        "technique_id": "T1657",
+        "technique_name": "Financial Theft"
+      },
+
+      "expected_logs": {
+        "security": [4688],
+        "sysmon": [1, 11]
+      },
+
+      "expected_artifacts": [
+        "wallet_transfer_receipt.txt 생성",
+        "공격자 wallet address 포함 거래 메모 생성"
+      ],
+
+      "notes": "사용자가 공격자 wallet address로 거래 수행"
+    },
+
+    {
+      "stage_id": 10,
+      "stage_name": "clipboard_activity_cleanup",
+      "description": "clipboard monitoring activity 흔적 삭제 시도",
+      "action_type": "file_deletion",
+      "attack": true,
+
+      "mitre_mapping": {
+        "tactic": "Defense Evasion",
+        "technique_id": "T1070.004",
+        "technique_name": "File Deletion"
+      },
+
+      "expected_logs": {
+        "security": [4688],
+        "sysmon": [26]
+      },
+
+      "notes": "clipboard monitoring artifact 삭제 시도 수행. txmon.ps1 및 일부 session artifact는 삭제되지 않고 잔존 가능"
+    },
+
+    {
+      "stage_id": 11,
+      "stage_name": "transaction_manipulation_residuals",
+      "description": "일부 monitoring 및 cleanup artifact 잔존",
+      "action_type": "residual_artifact",
+      "attack": false,
+
+      "mitre_mapping": null,
+
+      "expected_logs": {
+        "security": [],
+        "sysmon": []
+      },
+
+      "expected_artifacts": [
+        "wallet_session.log 잔존",
+        "txmon.ps1 잔존",
+        "Sysmon Event 26 삭제 기록 잔존"
+      ],
+
+      "notes": "cleanup 이후 일부 artifact 잔존"
+    },
+
+    {
+      "stage_id": 12,
+      "stage_name": "session_termination",
+      "description": "세션 종료",
+      "action_type": "logoff",
+      "attack": false,
+
+      "mitre_mapping": null,
+
+      "expected_logs": {
+        "security": [4634],
+        "sysmon": []
+      },
+
+      "notes": "공격 종료"
+    }
+
+  ],
+
+  "automation_notes": [
+    "GT는 attack:true stage만 기록",
+    "wallet address copy는 Set-Clipboard로 자동화 가능",
+    "실제 암호화폐 송금은 수행하지 않음",
+    "BTC address regex pattern 기반 selective replacement 수행",
+    "failed hijacking attempt 포함",
+    "유사 wallet address masquerading 포함",
+    "cleanup 이후 일부 artifact 잔존"
+  ],
+
+  "pre_execution_requirements": [
+    "PowerShell must be executed as Administrator",
+    "Sysmon must be installed with config enabling Event IDs 1, 3, 11, 22, 26",
+    "Audit Policy: Logon, Logoff, Process Creation, File System, Handle Manipulation must be enabled",
+    "SACL must be applied to C:\\ProgramData\\WalletCache",
+    "msedge.exe or chrome.exe must be installed for browser simulation",
+    "Network connectivity is not required (C2 connection failure is acceptable)",
+    "scenario8.json must exist in the same directory as the script"
+  ]
+
+}

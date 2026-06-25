@@ -1,0 +1,193 @@
+{
+  "timeline": [
+    {
+      "stage": "payload_delivery",
+      "evidence_ids": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11"
+      ],
+      "reason": "Multiple processes indicate the initial delivery of the payload."
+    },
+    {
+      "stage": "execution",
+      "evidence_ids": [
+        "16",
+        "18",
+        "78",
+        "79",
+        "80",
+        "81",
+        "82",
+        "83",
+        "84",
+        "85",
+        "86",
+        "87",
+        "88",
+        "89",
+        "90",
+        "91",
+        "92",
+        "93",
+        "94"
+      ],
+      "reason": "Processes show execution of the delivered payload."
+    },
+    {
+      "stage": "discovery",
+      "evidence_ids": [
+        "21",
+        "22",
+        "23",
+        "25",
+        "26",
+        "27",
+        "28",
+        "29",
+        "30",
+        "31",
+        "32",
+        "33",
+        "35",
+        "36",
+        "37",
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "46",
+        "47",
+        "48",
+        "49",
+        "50",
+        "51"
+      ],
+      "reason": "Processes indicate reconnaissance activities to gather information about the system."
+    },
+    {
+      "stage": "credential_access",
+      "evidence_ids": [
+        "64",
+        "65",
+        "66",
+        "67",
+        "68",
+        "69",
+        "70",
+        "71",
+        "72",
+        "73"
+      ],
+      "reason": "Processes suggest attempts to access or harvest credentials."
+    },
+    {
+      "stage": "command_and_control",
+      "evidence_ids": [
+        "98",
+        "99",
+        "100",
+        "101",
+        "102",
+        "103",
+        "104"
+      ],
+      "reason": "Processes indicate communication with a command and control server."
+    },
+    {
+      "stage": "exfiltration",
+      "evidence_ids": [
+        "105",
+        "106",
+        "107",
+        "108",
+        "109",
+        "110",
+        "111",
+        "112",
+        "113"
+      ],
+      "reason": "Processes show evidence of data being exfiltrated from the system."
+    },
+    {
+      "stage": "persistence",
+      "evidence_ids": [
+        "115",
+        "241",
+        "242",
+        "245",
+        "246",
+        "247",
+        "248",
+        "249",
+        "253",
+        "256",
+        "1773",
+        "1778",
+        "1779",
+        "1780"
+      ],
+      "reason": "Processes indicate methods used to maintain persistence on the system."
+    },
+    {
+      "stage": "defense_evasion",
+      "evidence_ids": [
+        "148",
+        "149",
+        "156",
+        "157",
+        "178",
+        "179",
+        "218",
+        "219",
+        "220",
+        "221",
+        "222",
+        "223",
+        "224",
+        "225",
+        "226",
+        "227",
+        "228",
+        "229",
+        "230",
+        "231",
+        "232",
+        "233",
+        "234",
+        "235",
+        "236"
+      ],
+      "reason": "Processes suggest techniques used to evade detection."
+    },
+    {
+      "stage": "impact",
+      "evidence_ids": [
+        "158",
+        "159",
+        "160",
+        "161",
+        "162",
+        "163",
+        "164",
+        "165",
+        "166",
+        "167",
+        "168"
+      ],
+      "reason": "Processes indicate actions taken that resulted in impact to the system."
+    }
+  ],
+  "uncertain": [],
+  "analyst_summary": "The attack began with the delivery of a payload, followed by its execution and discovery of system information. Credential access was attempted, leading to command and control communication, data exfiltration, and persistence mechanisms. Defense evasion techniques were employed, culminating in an impact on the system."
+}

@@ -1,0 +1,402 @@
+﻿{
+    "schema_version":  "2.0",
+    "scenario_name":  "crypto_wallet_transaction_hijacking_attack",
+    "records":  [
+                    {
+                        "stage_id":  1,
+                        "stage_name":  "authorized_logon",
+                        "action_type":  "logon",
+                        "description":  "정상 사용자 로그인",
+                        "attack":  false,
+                        "stage_start_time":  "2026-05-27T14:53:57.9822646+09:00",
+                        "stage_end_time":  "2026-05-27T14:54:36.0426233+09:00",
+                        "artifact_paths":  null,
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+
+                                                              ],
+                                                   "security":  [
+
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4624
+                                                                ],
+                                                   "sysmon":  [
+
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Logon: Security 4624 (already recorded at session start)",
+                        "notes":  "정상 사용자 세션 생성"
+                    },
+                    {
+                        "stage_id":  2,
+                        "stage_name":  "wallet_application_reconnaissance",
+                        "action_type":  "process_discovery",
+                        "description":  "암호화폐 거래 관련 browser 및 wallet application 탐색",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-27T14:54:41.9811097+09:00",
+                        "stage_end_time":  "2026-05-27T14:54:51.3435086+09:00",
+                        "artifact_paths":  "C:\\ProgramData\\WalletCache\\wallet_session.log",
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  1
+                                                              ],
+                                                   "security":  [
+                                                                    4688
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688
+                                                                ],
+                                                   "sysmon":  [
+                                                                  1
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Process Discovery: tasklist.exe → 4688 + Sysmon 1",
+                        "notes":  "chrome.exe, msedge.exe, ledgerlive.exe, exodus.exe 탐색"
+                    },
+                    {
+                        "stage_id":  3,
+                        "stage_name":  "clipboard_monitor_deployment",
+                        "action_type":  "script_deployment",
+                        "description":  "wallet transaction monitoring script 및 monitoring artifact 생성",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-27T14:54:58.4215327+09:00",
+                        "stage_end_time":  "2026-05-27T14:55:09.7763980+09:00",
+                        "artifact_paths":  [
+                                               "C:\\ProgramData\\WalletCache\\txmon.ps1",
+                                               "C:\\ProgramData\\WalletCache\\wallet_session.log",
+                                               "C:\\ProgramData\\WalletCache\\clipboard_activity.log"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  1,
+                                                                  11
+                                                              ],
+                                                   "security":  [
+                                                                    4688
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688
+                                                                ],
+                                                   "sysmon":  [
+                                                                  1,
+                                                                  11
+                                                              ]
+                                               },
+                        "primary_log_signal":  "File Create (Sysmon 11 x3) + Process Create (4688 + Sysmon 1 x3): cmd.exe via Start-Process",
+                        "notes":  "deployment powershell session을 통해 txmon.ps1 및 monitoring artifact 생성"
+                    },
+                    {
+                        "stage_id":  4,
+                        "stage_name":  "clipboard_monitoring_session_start",
+                        "action_type":  "clipboard_monitoring",
+                        "description":  "wallet/browser process 활성 상태 기반 background clipboard monitoring powershell session 실행",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-27T14:55:14.2709447+09:00",
+                        "stage_end_time":  "2026-05-27T14:55:52.3582675+09:00",
+                        "artifact_paths":  "C:\\ProgramData\\WalletCache\\txmon.ps1",
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  1
+                                                              ],
+                                                   "security":  [
+                                                                    4688
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688
+                                                                ],
+                                                   "sysmon":  [
+                                                                  1
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Process Create (4688 + Sysmon 1): powershell.exe → txmon.ps1 (child process)",
+                        "notes":  "새 monitoring powershell session이 txmon.ps1 실행 후 background clipboard polling 수행"
+                    },
+                    {
+                        "stage_id":  5,
+                        "stage_name":  "wallet_transaction_interception_attempt",
+                        "action_type":  "transaction_interception",
+                        "description":  "clipboard 내 BTC wallet address 탐지 후 C2 서버로 HTTP 전송 및 interception 준비",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-27T14:55:56.5892522+09:00",
+                        "stage_end_time":  "2026-05-27T14:56:17.6193489+09:00",
+                        "artifact_paths":  [
+                                               "C:\\ProgramData\\WalletCache\\clipboard_activity.log",
+                                               "C:\\ProgramData\\WalletCache\\wallet_session.log",
+                                               "C2:http://185.220.101.45/wallet/collect"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  3,
+                                                                  22
+                                                              ],
+                                                   "security":  [
+
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+
+                                                                ],
+                                                   "sysmon":  [
+                                                                  3,
+                                                                  22
+                                                              ]
+                                               },
+                        "primary_log_signal":  "C2 Exfil: Sysmon 3 (HTTP POST) + Sysmon 22 (DNS)",
+                        "notes":  "기존 txmon.ps1 monitoring session 내부에서 BTC wallet address regex pattern 탐지 및 C2 HTTP POST 수행"
+                    },
+                    {
+                        "stage_id":  6,
+                        "stage_name":  "failed_wallet_replacement_attempt",
+                        "action_type":  "clipboard_manipulation_attempt",
+                        "description":  "첫 번째 clipboard wallet address replacement 시도 후 사용자가 address mismatch 인지하여 실패, clipboard_activity.log에 실패 기록 append",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-27T14:56:28.1872719+09:00",
+                        "stage_end_time":  "2026-05-27T14:56:37.3242952+09:00",
+                        "artifact_paths":  "C:\\ProgramData\\WalletCache\\clipboard_activity.log",
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+
+                                                              ],
+                                                   "security":  [
+                                                                    4656,
+                                                                    4663
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4656,
+                                                                    4663
+                                                                ],
+                                                   "sysmon":  [
+
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Clipboard Replace #1 FAILED + 4656/4663 (SACL)",
+                        "notes":  "Object Access auditing 활성 환경에서는 clipboard_activity.log append 과정에서 Security Event 4656/4663 발생 가능"
+                    },
+                    {
+                        "stage_id":  7,
+                        "stage_name":  "failed_interception_artifact_cleanup",
+                        "action_type":  "file_deletion",
+                        "description":  "첫 번째 transaction interception 실패 이후 clipboard monitoring 흔적 삭제 시도",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-27T14:56:46.3401730+09:00",
+                        "stage_end_time":  "2026-05-27T14:57:04.4483603+09:00",
+                        "artifact_paths":  "C:\\ProgramData\\WalletCache\\clipboard_activity.log",
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  26
+                                                              ],
+                                                   "security":  [
+                                                                    4688
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688
+                                                                ],
+                                                   "sysmon":  [
+                                                                  26
+                                                              ]
+                                               },
+                        "primary_log_signal":  "File Delete (Sysmon 26) + Process Create (4688): cmd.exe /c del",
+                        "notes":  "첫 번째 replacement 실패 이후 공격 흔적 제거를 위해 clipboard_activity.log 삭제 수행. txmon.ps1 monitoring process 자체는 종료되지 않으며 background clipboard polling은 계속 유지됨"
+                    },
+                    {
+                        "stage_id":  8,
+                        "stage_name":  "wallet_similarity_validation_bypass",
+                        "action_type":  "transaction_deception",
+                        "description":  "유사 wallet address 기반 clipboard replacement 재수행 및 monitoring artifact 재생성",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-27T14:57:15.3161429+09:00",
+                        "stage_end_time":  "2026-05-27T14:57:24.4674904+09:00",
+                        "artifact_paths":  [
+                                               "C:\\ProgramData\\WalletCache\\clipboard_activity.log",
+                                               "C:\\ProgramData\\WalletCache\\validation_cache.tmp"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  11
+                                                              ],
+                                                   "security":  [
+                                                                    4656,
+                                                                    4663
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4656,
+                                                                    4663
+                                                                ],
+                                                   "sysmon":  [
+                                                                  11
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Masquerading + Clipboard Replace #2 SUCCESS: Sysmon 11 (log + cache recreate)",
+                        "notes":  "기존 txmon.ps1 monitoring session은 계속 실행 중이며 삭제된 clipboard_activity.log를 재생성한다. 이후 victim wallet address와 유사한 attacker wallet address를 사용하여 clipboard replacement를 재수행한다. validation cache 및 replacement 기록은 local artifact에 저장되며 Object Access auditing 활성 환경에서는 Security Event 4663 발생 가능"
+                    },
+                    {
+                        "stage_id":  9,
+                        "stage_name":  "fraudulent_transaction_execution",
+                        "action_type":  "financial_transaction_manipulation",
+                        "description":  "공격자 wallet address 기반 거래 수행",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-27T14:57:33.8534017+09:00",
+                        "stage_end_time":  "2026-05-27T14:57:41.9600981+09:00",
+                        "artifact_paths":  "C:\\Users\\jso45\\Desktop\\wallet_transfer_receipt.txt",
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  1,
+                                                                  11
+                                                              ],
+                                                   "security":  [
+                                                                    4688
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688
+                                                                ],
+                                                   "sysmon":  [
+                                                                  1,
+                                                                  11
+                                                              ]
+                                               },
+                        "primary_log_signal":  "File Create (Sysmon 11): receipt + Process Spawn (4688 + Sysmon 1)",
+                        "notes":  "사용자가 공격자 wallet address로 거래 수행"
+                    },
+                    {
+                        "stage_id":  10,
+                        "stage_name":  "clipboard_activity_cleanup",
+                        "action_type":  "file_deletion",
+                        "description":  "clipboard monitoring activity 흔적 삭제 시도",
+                        "attack":  true,
+                        "stage_start_time":  "2026-05-27T14:57:51.4116015+09:00",
+                        "stage_end_time":  "2026-05-27T14:57:59.5413345+09:00",
+                        "artifact_paths":  "C:\\ProgramData\\WalletCache\\clipboard_activity.log",
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+                                                                  26
+                                                              ],
+                                                   "security":  [
+                                                                    4688
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4688
+                                                                ],
+                                                   "sysmon":  [
+                                                                  26
+                                                              ]
+                                               },
+                        "primary_log_signal":  "File Delete (Sysmon 26) + Process Create (4688): cmd.exe /c del + txmon.ps1 종료",
+                        "notes":  "clipboard monitoring artifact 삭제 시도 수행. txmon.ps1 및 일부 session artifact는 삭제되지 않고 잔존 가능"
+                    },
+                    {
+                        "stage_id":  11,
+                        "stage_name":  "transaction_manipulation_residuals",
+                        "action_type":  "residual_artifact",
+                        "description":  "일부 monitoring 및 cleanup artifact 잔존",
+                        "attack":  false,
+                        "stage_start_time":  "2026-05-27T14:58:08.5015487+09:00",
+                        "stage_end_time":  "2026-05-27T14:58:16.5860612+09:00",
+                        "artifact_paths":  [
+                                               "C:\\ProgramData\\WalletCache\\wallet_session.log",
+                                               "C:\\ProgramData\\WalletCache\\txmon.ps1"
+                                           ],
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+
+                                                              ],
+                                                   "security":  [
+
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+
+                                                                ],
+                                                   "sysmon":  [
+
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Residual: wallet_session.log + txmon.ps1 잔존, clipboard_activity.log 삭제됨",
+                        "notes":  "cleanup 이후 일부 artifact 잔존"
+                    },
+                    {
+                        "stage_id":  12,
+                        "stage_name":  "session_termination",
+                        "action_type":  "logoff",
+                        "description":  "세션 종료",
+                        "attack":  false,
+                        "stage_start_time":  "2026-05-27T14:58:22.5944728+09:00",
+                        "stage_end_time":  "2026-05-27T14:58:30.6212653+09:00",
+                        "artifact_paths":  null,
+                        "user":  "jso45",
+                        "host":  "DESKTOP-BAK6QER",
+                        "execution_status":  "success",
+                        "observed_event_ids":  {
+                                                   "sysmon":  [
+
+                                                              ],
+                                                   "security":  [
+
+                                                                ]
+                                               },
+                        "expected_event_ids":  {
+                                                   "security":  [
+                                                                    4634
+                                                                ],
+                                                   "sysmon":  [
+
+                                                              ]
+                                               },
+                        "primary_log_signal":  "Logoff: Security 4634 (recorded on actual session end)",
+                        "notes":  "공격 종료"
+                    }
+                ]
+}

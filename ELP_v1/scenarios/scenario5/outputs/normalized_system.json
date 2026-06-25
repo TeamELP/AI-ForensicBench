@@ -1,0 +1,197 @@
+[
+  {
+    "evidence_id": "23bdb85e-d21b-403b-802f-0b66cb76c0de",
+    "timestamp": "2026-05-23T14:08:45+09:00",
+    "source": "system",
+    "raw_event_id": 7036,
+    "event_type": "service_state_change",
+    "service_name": "Software Protection",
+    "service_state": "stopped",
+    "user": null,
+    "artifacts": [
+      {
+        "type": "service",
+        "value": "Software Protection"
+      }
+    ],
+    "additional_fields": {}
+  },
+  {
+    "evidence_id": "82e94e86-750a-46a7-903a-4fdde2c2675f",
+    "timestamp": "2026-05-23T14:08:55+09:00",
+    "source": "system",
+    "raw_event_id": 7036,
+    "event_type": "service_state_change",
+    "service_name": "Windows Modules Installer",
+    "service_state": "running",
+    "user": null,
+    "artifacts": [
+      {
+        "type": "service",
+        "value": "Windows Modules Installer"
+      }
+    ],
+    "additional_fields": {}
+  },
+  {
+    "evidence_id": "bdaee43c-6ddc-41ed-a6af-c1ff18d7cd80",
+    "timestamp": "2026-05-23T14:09:25+09:00",
+    "source": "system",
+    "raw_event_id": 1014,
+    "event_type": "dns_timeout",
+    "service_name": null,
+    "service_state": null,
+    "user": null,
+    "artifacts": [
+      {
+        "type": "domain",
+        "value": "mobile.events.data.microsoft.com"
+      }
+    ],
+    "additional_fields": {
+      "query_domain": "mobile.events.data.microsoft.com"
+    }
+  },
+  {
+    "evidence_id": "97c0cbc0-f5b5-4f2c-ac27-ed755d01b02b",
+    "timestamp": "2026-05-23T14:09:32+09:00",
+    "source": "system",
+    "raw_event_id": 7040,
+    "event_type": "service_config_change",
+    "service_name": "Print Spooler",
+    "service_state": null,
+    "user": null,
+    "artifacts": [
+      {
+        "type": "service",
+        "value": "Print Spooler"
+      }
+    ],
+    "additional_fields": {
+      "old_start_type": "auto start",
+      "new_start_type": "disabled"
+    }
+  },
+  {
+    "evidence_id": "f2afc948-1a5f-49fa-a457-2b25f7c2870a",
+    "timestamp": "2026-05-23T14:10:03+09:00",
+    "source": "system",
+    "raw_event_id": 7036,
+    "event_type": "service_state_change",
+    "service_name": "Network Setup Service",
+    "service_state": "running",
+    "user": null,
+    "artifacts": [
+      {
+        "type": "service",
+        "value": "Network Setup Service"
+      }
+    ],
+    "additional_fields": {}
+  },
+  {
+    "evidence_id": "f9df18cb-9cb5-4bbb-b915-3333ca3b1ca9",
+    "timestamp": "2026-05-23T14:10:35+09:00",
+    "source": "system",
+    "raw_event_id": 7036,
+    "event_type": "service_state_change",
+    "service_name": "Print Spooler",
+    "service_state": "stopped",
+    "user": null,
+    "artifacts": [
+      {
+        "type": "service",
+        "value": "Print Spooler"
+      }
+    ],
+    "additional_fields": {}
+  },
+  {
+    "evidence_id": "15f4dc7a-9fa4-46aa-a046-41e38e503761",
+    "timestamp": "2026-05-23T14:10:57+09:00",
+    "source": "system",
+    "raw_event_id": 7036,
+    "event_type": "service_state_change",
+    "service_name": "Windows Modules Installer",
+    "service_state": "stopped",
+    "user": null,
+    "artifacts": [
+      {
+        "type": "service",
+        "value": "Windows Modules Installer"
+      }
+    ],
+    "additional_fields": {}
+  },
+  {
+    "evidence_id": "76f6f232-5560-4945-ba00-6f42654b9ff7",
+    "timestamp": "2026-05-23T14:12:11+09:00",
+    "source": "system",
+    "raw_event_id": 7036,
+    "event_type": "service_state_change",
+    "service_name": "Windows Update",
+    "service_state": "running",
+    "user": null,
+    "artifacts": [
+      {
+        "type": "service",
+        "value": "Windows Update"
+      }
+    ],
+    "additional_fields": {}
+  },
+  {
+    "evidence_id": "2289b664-b743-42b5-9414-d15fe0fee685",
+    "timestamp": "2026-05-23T14:13:04+09:00",
+    "source": "system",
+    "raw_event_id": 7036,
+    "event_type": "service_state_change",
+    "service_name": "Network Setup Service",
+    "service_state": "stopped",
+    "user": null,
+    "artifacts": [
+      {
+        "type": "service",
+        "value": "Network Setup Service"
+      }
+    ],
+    "additional_fields": {}
+  },
+  {
+    "evidence_id": "5308ae0f-2952-4f3d-804f-395039f6d049",
+    "timestamp": "2026-05-23T14:13:51+09:00",
+    "source": "system",
+    "raw_event_id": 7040,
+    "event_type": "service_config_change",
+    "service_name": "Print Spooler",
+    "service_state": null,
+    "user": null,
+    "artifacts": [
+      {
+        "type": "service",
+        "value": "Print Spooler"
+      }
+    ],
+    "additional_fields": {
+      "old_start_type": "disabled",
+      "new_start_type": "auto start"
+    }
+  },
+  {
+    "evidence_id": "38dc42b7-2dfa-44ac-8abe-00c81160d516",
+    "timestamp": "2026-05-23T14:13:51+09:00",
+    "source": "system",
+    "raw_event_id": 7036,
+    "event_type": "service_state_change",
+    "service_name": "Print Spooler",
+    "service_state": "running",
+    "user": null,
+    "artifacts": [
+      {
+        "type": "service",
+        "value": "Print Spooler"
+      }
+    ],
+    "additional_fields": {}
+  }
+]

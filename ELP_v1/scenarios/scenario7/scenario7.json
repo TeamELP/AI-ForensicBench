@@ -1,0 +1,370 @@
+{
+  "scenario_id": "win11_browser_artifact_manipulation",
+  "scenario_name": "browser_history_wal_tampering_attack",
+  "scenario_type": "scripted_intrusion",
+
+  "description": "내부 재무/인사 포털 접근 후 민감 문서를 다운로드하고, 브라우저 SQLite 기록(History, Downloads)을 직접 조작하여 접근 흔적을 은닉한 뒤 Prefetch 및 도구 흔적 제거를 시도하지만 WAL 기반 일부 흔적은 잔존하는 다단계 Anti-Forensics 공격 시나리오",
+  
+  "environment_context": {
+    "environment_type": "single_windows_host",
+    "os": ["Windows 11"],
+    "logging_sources": [
+      "Windows Security Log",
+      "Sysmon Operational Log"
+    ],
+    "required_logging_configuration": {
+      "security_events": [4624, 4634, 4663, 4688],
+      "sysmon_events": [1, 3, 11, 26]
+    }
+  },
+
+  "artifact_definition": {
+    "base_directory": "C:\\ProgramData\\WinCache",
+    "download_archive": "C:\\ProgramData\\WinCache\\browser_update.zip",
+    "sqlite_tool_path": "C:\\Users\\Administrator\\Downloads\\sqlite3.exe",
+    "history_export_tmp": "C:\\Users\\Administrator\\Downloads\\history_export.tmp",
+    "edge_history_db": "C:\\Users\\Administrator\\AppData\\Local\\Microsoft\\Edge\\User Data\\Default\\History",
+    "edge_history_wal": "C:\\Users\\Administrator\\AppData\\Local\\Microsoft\\Edge\\User Data\\Default\\History-wal",
+    "edge_history_shm": "C:\\Users\\Administrator\\AppData\\Local\\Microsoft\\Edge\\User Data\\Default\\History-shm",
+    "downloaded_documents": [
+      "C:\\Users\\Administrator\\Downloads\\salary_2025.xlsx",
+      "C:\\Users\\Administrator\\Downloads\\budget_plan_q4.pdf"
+    ],
+    "prefetch_artifact": "C:\\Windows\\Prefetch\\SQLITE3.EXE-*.pf"
+  },
+
+  "scenario_flow": [
+
+    {
+      "stage_id": 1,
+      "stage_name": "authorized_logon",
+      "description": "정상 사용자 계정으로 시스템에 로그인하여 사용자 세션 생성",
+      "action_type": "user_logon",
+      "attack": false,
+      "mitre_mapping": null,
+      "expected_logs": {
+        "security": [4624],
+        "sysmon": []
+      },
+      "expected_artifacts": [
+        "정상 사용자 세션 생성"
+      ],
+      "notes": "정상 로그인"
+    },
+
+    {
+      "stage_id": 2,
+      "stage_name": "tool_archive_download",
+      "description": "sqlite3.exe가 포함된 ZIP 파일을 외부에서 다운로드하여 브라우저 기록 조작 도구 반입",
+      "action_type": "tool_download",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Resource Development",
+        "technique_id": "T1105",
+        "technique_name": "Ingress Tool Transfer"
+      },
+      "expected_logs": {
+        "security": [4688],
+        "sysmon": [1, 3, 11]
+      },
+      "expected_artifacts": [
+        "browser_update.zip 다운로드",
+        "powershell.exe 외부 HTTP 연결",
+        "Zone.Identifier ADS 생성",
+        "ZIP 파일 생성 (Sysmon Event 11)"
+      ],
+      "notes": "sqlite3.exe 포함 ZIP 다운로드"
+    },
+
+    {
+      "stage_id": 3,
+      "stage_name": "tool_unpacking",
+      "description": "다운로드한 ZIP 파일을 압축 해제하여 sqlite3.exe 및 작업 디렉터리 배치",
+      "action_type": "tool_unpacking",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Defense Evasion",
+        "technique_id": "T1140",
+        "technique_name": "Deobfuscate/Decode Files or Information"
+      },
+      "expected_logs": {
+        "security": [4663],
+        "sysmon": [11]
+      },
+      "expected_artifacts": [
+        "WinCache 디렉터리 생성",
+        "sqlite3.exe 압축 해제",
+        "ProgramData 하위 실행파일 생성"
+      ],
+      "notes": "Expand-Archive 기반 sqlite3.exe 생성 시 Sysmon Event 11 발생 가능. Defender 실시간 검사 환경에서는 압축 해제 실패 가능"
+    },
+
+    {
+      "stage_id": 4,
+      "stage_name": "browser_launch_via_powershell",
+      "description": "PowerShell 기반으로 Edge 브라우저를 실행하여 비정상 parent-child 프로세스 체인 형성",
+      "action_type": "browser_launch",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Execution",
+        "technique_id": "T1059.001",
+        "technique_name": "PowerShell"
+      },
+      "expected_logs": {
+        "security": [4688],
+        "sysmon": [1]
+      },
+      "expected_artifacts": [
+        "msedge.exe 실행",
+        "비정상 powershell → msedge parent-child 관계"
+      ],
+      "notes": "PowerShell 기반 브라우저 실행"
+    },
+
+    {
+      "stage_id": 5,
+      "stage_name": "sensitive_portal_access",
+      "description": "내부 재무·인사 포털에 접근하여 민감 페이지 및 브라우저 방문기록 생성",
+      "action_type": "browser_url_access",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Collection",
+        "technique_id": "T1213",
+        "technique_name": "Data from Information Repositories"
+      },
+      "expected_logs": {
+        "security": [4663, 4688],
+        "sysmon": [1]
+      },
+      "expected_artifacts": [
+        "재무/인사 포털 접근",
+        "History DB urls / visits row 생성"
+      ],
+      "notes": "민감 포털 접근, 핵심 artifact는 History DB urls/visits row 생성"
+    },
+
+    {
+      "stage_id": 6,
+      "stage_name": "sensitive_document_download",
+      "description": "급여 및 재무 관련 민감 문서를 다운로드하여 Downloads 기록 및 파일 artifact 생성",
+      "action_type": "file_download",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Collection",
+        "technique_id": "T1213",
+        "technique_name": "Data from Information Repositories"
+      },
+      "expected_logs": {
+        "security": [4663],
+        "sysmon": [11]
+      },
+      "expected_artifacts": [
+        "salary_2025.xlsx 다운로드",
+        "budget_plan_q4.pdf 다운로드",
+        "downloads 테이블 row 생성",
+        "Zone.Identifier ADS 생성"
+      ],
+      "notes": "민감 문서 다운로드"
+    },
+
+    {
+      "stage_id": 7,
+      "stage_name": "browser_process_termination",
+      "description": "브라우저 SQLite DB 접근을 위해 msedge.exe를 강제 종료하고 WAL checkpoint 미수행 상태 유도",
+      "action_type": "process_termination",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Defense Evasion",
+        "technique_id": "T1489",
+        "technique_name": "Service Stop"
+      },
+      "expected_logs": {
+        "security": [4688],
+        "sysmon": [1]
+      },
+      "expected_artifacts": [
+        "msedge.exe 강제 종료",
+        "History DB lock 해제",
+        "WAL checkpoint 미수행 가능 상태"
+      ],
+      "notes": "브라우저 강제 종료 후 WAL checkpoint 미수행 상태가 유지될 경우 삭제 이전 row 일부가 WAL에 잔존 가능"
+    },
+
+    {
+      "stage_id": 8,
+      "stage_name": "sqlite_history_recon",
+      "description": "sqlite3.exe를 사용하여 Edge History SQLite DB 구조 및 테이블 정보 정찰",
+      "action_type": "sqlite_reconnaissance",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Collection",
+        "technique_id": "T1005",
+        "technique_name": "Data from Local System"
+      },
+      "expected_logs": {
+        "security": [4663, 4688],
+        "sysmon": [1]
+      },
+      "expected_artifacts": [
+        "sqlite3.exe 실행",
+        "History DB 접근",
+        "DB 테이블 구조 확인"
+      ],
+      "notes": "sqlite3.exe를 통한 SQLite DB reconnaissance는 browser artifact tampering 이전 준비 단계 역할"
+    },
+
+    {
+      "stage_id": 9,
+      "stage_name": "history_export_recon",
+      "description": "브라우저 방문기록을 임시 CSV 파일로 export하여 삭제 대상 URL 및 접근 흔적 식별",
+      "action_type": "history_export",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Collection",
+        "technique_id": "T1005",
+        "technique_name": "Data from Local System"
+      },
+      "expected_logs": {
+        "security": [4663],
+        "sysmon": [1, 11]
+      },
+      "expected_artifacts": [
+        "history_export.tmp 생성",
+        "브라우저 방문기록 export",
+        "삭제 대상 URL 식별"
+      ],
+      "notes": "삭제 전 기록 추출"
+    },
+
+    {
+      "stage_id": 10,
+      "stage_name": "browser_history_tampering",
+      "description": "SQLite urls 및 visits 테이블 row를 직접 삭제하여 브라우저 접근 흔적 제거 시도",
+      "action_type": "browser_history_tampering",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Defense Evasion",
+        "technique_id": "T1070",
+        "technique_name": "Indicator Removal on Host"
+      },
+      "expected_logs": {
+        "security": [4663, 4688],
+        "sysmon": [1]
+      },
+      "expected_artifacts": [
+        "urls row 삭제",
+        "visits row 삭제",
+        "History-wal 변경 가능",
+        "브라우저 접근 흔적 제거"
+      ],
+      "notes": "단순 DB row 수정은 Sysmon Event 11 보장 안 됨. WAL 신규 생성 시에만 Event 11 가능"
+    },
+
+    {
+      "stage_id": 11,
+      "stage_name": "download_record_manipulation",
+      "description": "downloads 및 downloads_url_chains 테이블 row를 삭제하여 다운로드 이력 은닉 시도",
+      "action_type": "download_record_tampering",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Defense Evasion",
+        "technique_id": "T1565",
+        "technique_name": "Data Manipulation"
+      },
+      "expected_logs": {
+        "security": [4663, 4688],
+        "sysmon": [1]
+      },
+      "expected_artifacts": [
+        "downloads row 삭제",
+        "downloads_url_chains 정리",
+        "History-wal 수정 가능"
+      ],
+      "notes": "downloads 및 downloads_url_chains row 제거 이후에도 WAL 또는 slack 영역에 일부 데이터 잔존 가능"
+    },
+
+    {
+      "stage_id": 12,
+      "stage_name": "prefetch_artifact_cleanup",
+      "description": "SQLITE3.EXE Prefetch artifact를 삭제하여 sqlite3 실행 흔적 제거 시도",
+      "action_type": "prefetch_cleanup",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Defense Evasion",
+        "technique_id": "T1070.004",
+        "technique_name": "File Deletion"
+      },
+      "expected_logs": {
+        "security": [4663, 4688],
+        "sysmon": [1, 26]
+      },
+      "expected_artifacts": [
+        "SQLITE3.EXE Prefetch 삭제",
+        "sqlite3 실행 흔적 제거 시도"
+      ],
+      "notes": "Prefetch 삭제는 Sysmon Event 26(FileDelete) 기반으로 확인 가능"
+    },
+
+    {
+      "stage_id": 13,
+      "stage_name": "tool_and_tmp_cleanup",
+      "description": "history_export.tmp, sqlite3.exe, ZIP 파일 및 작업 디렉터리를 삭제하여 도구 및 임시 artifact 정리",
+      "action_type": "artifact_cleanup",
+      "attack": true,
+      "mitre_mapping": {
+        "tactic": "Defense Evasion",
+        "technique_id": "T1070.004",
+        "technique_name": "File Deletion"
+      },
+      "expected_logs": {
+        "security": [4663, 4688],
+        "sysmon": [1, 26]
+      },
+      "expected_artifacts": [
+        "history_export.tmp 삭제",
+        "sqlite3.exe 삭제",
+        "browser_update.zip 삭제",
+        "WinCache 디렉터리 삭제"
+      ],
+      "notes": "sqlite3.exe 및 tmp artifact 제거 이후에도 Prefetch, WAL, Security/Sysmon 로그는 잔존 가능"
+    },
+
+    {
+      "stage_id": 14,
+      "stage_name": "wal_artifact_remaining",
+      "description": "SQLite WAL 구조 특성으로 인해 삭제 이전 일부 row 및 WAL artifact가 시스템에 잔존하는 상태",
+      "action_type": "wal_artifact_remaining",
+      "attack": false,
+      "mitre_mapping": null,
+      "expected_logs": {
+        "security": [],
+        "sysmon": []
+      },
+      "expected_artifacts": [
+        "History-wal 잔존",
+        "History-shm 잔존",
+        "삭제 이전 row 일부 복구 가능"
+      ],
+      "notes": "SQLite WAL 구조 특성상 삭제 이전 row 일부 복구 가능성이 존재하며 forensic recovery artifact 역할 수행"
+    },
+
+    {
+      "stage_id": 15,
+      "stage_name": "session_termination",
+      "description": "사용자 세션 종료 후 공격 종료 및 최종 forensic artifact 잔존 상태 유지",
+      "action_type": "session_termination",
+      "attack": false,
+      "mitre_mapping": null,
+      "expected_logs": {
+        "security": [4634],
+        "sysmon": []
+      },
+      "expected_artifacts": [
+        "세션 종료",
+        "Security/Sysmon 로그 잔존"
+      ],
+      "notes": "공격 종료"
+    }
+
+  ]
+}
